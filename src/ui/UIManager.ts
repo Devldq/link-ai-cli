@@ -128,6 +128,10 @@ export class UIManager {
     console.log(chalk.gray('  /doc write <file> <content> - Write structured document'));
     console.log(chalk.gray('  /search <file> <query>    - Search in document'));
     console.log(chalk.gray('  /convert <src> <dst> <fmt> - Convert document format'));
+    console.log(chalk.cyan('\n💾 Auto-Save Features:'));
+    console.log(chalk.gray('  - AI responses with code blocks are automatically saved'));
+    console.log(chalk.gray('  - Use keywords like "保存", "创建", "生成" to trigger auto-save'));
+    console.log(chalk.gray('  - Specify filenames in your request for targeted saving'));
     console.log(chalk.cyan('\n💡 Tips:'));
     console.log(chalk.gray('  - Ask me to generate code, review code, or execute tasks'));
     console.log(chalk.gray('  - I can work with multiple programming languages'));

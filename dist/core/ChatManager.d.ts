@@ -45,6 +45,12 @@ export declare class ChatManager {
     private handleDocumentConvert;
     private enhanceMessageWithDocumentContext;
     private extractFilePaths;
+    private handleAIResponseSaving;
+    private saveAIResponseContent;
+    private saveToSpecificFile;
+    private extractCodeBlocks;
+    private generateFileName;
+    private isLanguageMatch;
     cleanup(): Promise<void>;
 }
 //# sourceMappingURL=ChatManager.d.ts.map

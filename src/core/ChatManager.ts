@@ -203,6 +203,9 @@ export class ChatManager {
       this.currentSession.messages.push(assistantMessage);
       this.updateSessionMetadata();
 
+      // 检查是否需要保存AI响应到文件
+      await this.handleAIResponseSaving(input, assistantResponse);
+
       // 自动保存会话
       await this.saveCurrentSession();
 
@@ -352,6 +355,12 @@ When the user requests to modify, edit, update, or rewrite documents/files:
 - You cannot directly read or write files - you can only suggest changes based on the provided context
 - When suggesting file modifications, provide clear, specific instructions or complete updated content
 - Always acknowledge the current content when making suggestions
+
+When generating code or content that should be saved to files:
+- Use proper code blocks with language specification
+- The system will automatically detect and save code blocks to appropriate files
+- If the user specifies a filename, the content will be saved to that file
+- Multiple code blocks will be saved as separate files with appropriate extensions
 
 Be helpful, concise, and provide practical solutions. When generating code, include comments and follow best practices.`;
   }
@@ -935,6 +944,191 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
 
     return filePaths;
+  }
+
+  // 处理AI响应保存
+  private async handleAIResponseSaving(userInput: string, aiResponse: string): Promise<void> {
+    try {
+      // 检测是否需要保存到文件
+      const saveKeywords = [
+        '保存', '写入', '创建', '生成', '输出',
+        'save', 'write', 'create', 'generate', 'output',
+        '文件', '文档', 'file', 'document'
+      ];
+
+      const needsSaving = saveKeywords.some(keyword => 
+        userInput.toLowerCase().includes(keyword.toLowerCase())
+      );
+
+      if (!needsSaving) {
+        return;
+      }
+
+      // 提取文件路径
+      const filePaths = this.extractFilePaths(userInput);
+      
+      // 如果没有明确的文件路径，尝试从AI响应中提取代码块或内容
+      if (filePaths.length === 0) {
+        await this.saveAIResponseContent(userInput, aiResponse);
+        return;
+      }
+
+      // 如果有明确的文件路径，保存到指定文件
+      for (const filePath of filePaths) {
+        await this.saveToSpecificFile(filePath, aiResponse);
+      }
+
+    } catch (error) {
+      this.logger.error('处理AI响应保存时出错:', error);
+    }
+  }
+
+  // 保存AI响应内容到文件
+  private async saveAIResponseContent(userInput: string, aiResponse: string): Promise<void> {
+    try {
+      // 提取代码块
+      const codeBlocks = this.extractCodeBlocks(aiResponse);
+      
+      if (codeBlocks.length > 0) {
+        for (let i = 0; i < codeBlocks.length; i++) {
+          const block = codeBlocks[i];
+          if (block) {
+            const fileName = this.generateFileName(block.language, userInput, i);
+            
+            const result = await this.fileEditService.writeFile(fileName, block.content);
+          if (result.success) {
+            console.log(chalk.green(`\n✅ 代码已保存到: ${fileName}`));
+            if (result.backupPath) {
+              console.log(chalk.gray(`备份文件: ${result.backupPath}`));
+            }
+          } else {
+              console.log(chalk.red(`❌ 保存失败: ${result.error}`));
+            }
+          }
+        }
+      } else {
+        // 如果没有代码块，保存整个响应
+        const fileName = this.generateFileName('txt', userInput, 0);
+        const result = await this.fileEditService.writeFile(fileName, aiResponse);
+        if (result.success) {
+          console.log(chalk.green(`\n✅ 响应已保存到: ${fileName}`));
+        }
+      }
+    } catch (error) {
+      this.logger.error('保存AI响应内容时出错:', error);
+    }
+  }
+
+  // 保存到指定文件
+  private async saveToSpecificFile(filePath: string, aiResponse: string): Promise<void> {
+    try {
+      // 提取代码块或使用整个响应
+      const codeBlocks = this.extractCodeBlocks(aiResponse);
+      let contentToSave = aiResponse;
+
+      if (codeBlocks.length > 0) {
+        // 如果有代码块，优先使用第一个代码块
+        const primaryBlock = codeBlocks.find(block => 
+          this.isLanguageMatch(block.language, filePath)
+        ) || codeBlocks[0];
+        
+        if (primaryBlock) {
+          contentToSave = primaryBlock.content;
+        }
+      }
+
+      const result = await this.fileEditService.writeFile(filePath, contentToSave);
+      if (result.success) {
+        console.log(chalk.green(`\n✅ 内容已保存到: ${filePath}`));
+        if (result.backupPath) {
+          console.log(chalk.gray(`备份文件: ${result.backupPath}`));
+        }
+      } else {
+        console.log(chalk.red(`❌ 保存失败: ${result.error}`));
+      }
+    } catch (error) {
+      this.logger.error(`保存到文件 ${filePath} 时出错:`, error);
+    }
+  }
+
+  // 提取代码块
+  private extractCodeBlocks(content: string): Array<{ language: string; content: string }> {
+    const codeBlocks: Array<{ language: string; content: string }> = [];
+    
+    // 匹配代码块 ```language\ncontent\n```
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
+    let match;
+
+    while ((match = codeBlockRegex.exec(content)) !== null) {
+      const language = match[1] || 'text';
+      const blockContent = match[2]?.trim();
+      
+      if (blockContent) {
+        codeBlocks.push({
+          language,
+          content: blockContent
+        });
+      }
+    }
+
+    return codeBlocks;
+  }
+
+  // 生成文件名
+  private generateFileName(language: string, userInput: string, index: number): string {
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
+    
+    // 从用户输入中提取可能的文件名
+    const fileNameMatch = userInput.match(/(?:创建|生成|写入|保存).*?([a-zA-Z0-9_-]+)(?:\.(\w+))?/);
+    let baseName = fileNameMatch ? fileNameMatch[1] : 'ai-generated';
+    
+    // 根据语言确定扩展名
+    const extensions: Record<string, string> = {
+      'javascript': 'js',
+      'typescript': 'ts',
+      'python': 'py',
+      'java': 'java',
+      'cpp': 'cpp',
+      'c': 'c',
+      'html': 'html',
+      'css': 'css',
+      'json': 'json',
+      'yaml': 'yaml',
+      'yml': 'yml',
+      'markdown': 'md',
+      'md': 'md',
+      'txt': 'txt',
+      'text': 'txt'
+    };
+
+    const extension = extensions[language.toLowerCase()] || 'txt';
+    const suffix = index > 0 ? `-${index}` : '';
+    
+    return `${baseName}${suffix}-${timestamp}.${extension}`;
+  }
+
+  // 检查语言是否匹配文件扩展名
+  private isLanguageMatch(language: string, filePath: string): boolean {
+    const ext = filePath.split('.').pop()?.toLowerCase();
+    if (!ext) return false;
+
+    const languageMap: Record<string, string[]> = {
+      'javascript': ['js', 'jsx'],
+      'typescript': ['ts', 'tsx'],
+      'python': ['py'],
+      'java': ['java'],
+      'cpp': ['cpp', 'cc', 'cxx'],
+      'c': ['c', 'h'],
+      'html': ['html', 'htm'],
+      'css': ['css'],
+      'json': ['json'],
+      'yaml': ['yaml', 'yml'],
+      'markdown': ['md', 'markdown'],
+      'text': ['txt']
+    };
+
+    const extensions = languageMap[language.toLowerCase()] || [];
+    return extensions.includes(ext);
   }
 
   // 清理资源
