@@ -1,4 +1,4 @@
-// 【AI 李大庆】start: 安全执行服务实现
+// 安全执行服务实现
 import vm from 'vm';
 import fs from 'fs-extra';
 import path from 'path';
@@ -26,18 +26,18 @@ export class ExecutionService implements IExecutionService {
     this.ensureTempDirectory();
   }
 
-  // 【AI 李大庆】: 执行代码
+  // 执行代码
   async executeCode(code: string, language: string, options: ExecutionOptions = {}): Promise<ExecutionResult> {
     try {
       this.logger.debug(`Executing ${language} code`);
 
-      // 【AI 李大庆】: 安全检查
+      // 安全检查
       const securityCheck = await this.validateExecution(code);
       if (!securityCheck.passed) {
         throw new SecurityError(`Security validation failed: ${securityCheck.issues.map(i => i.message).join(', ')}`);
       }
 
-      // 【AI 李大庆】: 创建沙箱
+      // 创建沙箱
       const sandboxConfig: SandboxConfig = {
         timeout: options.timeout || 10000,
         memoryLimit: 128 * 1024 * 1024, // 128MB
@@ -48,11 +48,11 @@ export class ExecutionService implements IExecutionService {
       const sandbox = await this.createSandbox(sandboxConfig);
 
       try {
-        // 【AI 李大庆】: 根据语言执行代码
+        // 根据语言执行代码
         const result = await this.executeInSandbox(code, language, sandbox, options);
         return result;
       } finally {
-        // 【AI 李大庆】: 清理沙箱
+        // 清理沙箱
         await sandbox.cleanup();
       }
 
@@ -62,7 +62,7 @@ export class ExecutionService implements IExecutionService {
     }
   }
 
-  // 【AI 李大庆】: 创建沙箱
+  // 创建沙箱
   async createSandbox(config: SandboxConfig): Promise<Sandbox> {
     const sandboxId = `sandbox-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const sandboxDir = path.join(this.tempDir, sandboxId);
@@ -72,11 +72,11 @@ export class ExecutionService implements IExecutionService {
     return new NodeSandbox(sandboxId, sandboxDir, config, this.logger);
   }
 
-  // 【AI 李大庆】: 验证执行安全性
+  // 验证执行安全性
   async validateExecution(code: string): Promise<SecurityCheck> {
     const issues: SecurityIssue[] = [];
 
-    // 【AI 李大庆】: 检查危险函数
+    // 检查危险函数
     const dangerousFunctions = [
       'eval', 'Function', 'setTimeout', 'setInterval',
       'require', 'import', 'process.exit', 'process.kill',
@@ -94,7 +94,7 @@ export class ExecutionService implements IExecutionService {
       }
     });
 
-    // 【AI 李大庆】: 检查文件系统访问
+    // 检查文件系统访问
     const fileSystemPatterns = [
       /fs\.(readFile|writeFile|unlink|rmdir|rm)/g,
       /require\(['"]fs['"]\)/g,
@@ -112,7 +112,7 @@ export class ExecutionService implements IExecutionService {
       }
     });
 
-    // 【AI 李大庆】: 检查网络访问
+    // 检查网络访问
     const networkPatterns = [
       /require\(['"]http['"]\)/g,
       /require\(['"]https['"]\)/g,
@@ -132,7 +132,7 @@ export class ExecutionService implements IExecutionService {
       }
     });
 
-    // 【AI 李大庆】: 检查eval使用
+    // 检查eval使用
     if (code.includes('eval(')) {
       issues.push({
         type: 'eval_usage',
@@ -151,7 +151,7 @@ export class ExecutionService implements IExecutionService {
     };
   }
 
-  // 【AI 李大庆】: 在沙箱中执行代码
+  // 在沙箱中执行代码
   private async executeInSandbox(
     code: string, 
     language: string, 
@@ -173,15 +173,15 @@ export class ExecutionService implements IExecutionService {
     }
   }
 
-  // 【AI 李大庆】: 执行JavaScript代码
+  // 执行JavaScript代码
   private async executeJavaScript(code: string, _sandbox: Sandbox, options: ExecutionOptions): Promise<ExecutionResult> {
     const startTime = Date.now();
     
     try {
-      // 【AI 李大庆】: 创建安全的执行上下文
+      // 创建安全的执行上下文
       const context = this.createSecureContext(options);
       
-      // 【AI 李大庆】: 包装代码以捕获输出
+      // 包装代码以捕获输出
       const wrappedCode = `
         const console = {
           log: (...args) => __output.push(args.join(' ')),
@@ -198,7 +198,7 @@ export class ExecutionService implements IExecutionService {
         }
       `;
 
-      // 【AI 李大庆】: 执行代码
+      // 执行代码
       vm.runInContext(wrappedCode, context, {
         timeout: options.timeout || 10000,
         displayErrors: true
@@ -227,17 +227,17 @@ export class ExecutionService implements IExecutionService {
     }
   }
 
-  // 【AI 李大庆】: 执行Python代码
+  // 执行Python代码
   private async executePython(code: string, _sandbox: Sandbox, options: ExecutionOptions): Promise<ExecutionResult> {
     return await this.executeWithProcess('python3', ['-c', code], options);
   }
 
-  // 【AI 李大庆】: 执行Bash代码
+  // 执行Bash代码
   private async executeBash(code: string, _sandbox: Sandbox, options: ExecutionOptions): Promise<ExecutionResult> {
     return await this.executeWithProcess('bash', ['-c', code], options);
   }
 
-  // 【AI 李大庆】: 使用子进程执行
+  // 使用子进程执行
   private async executeWithProcess(command: string, args: string[], options: ExecutionOptions): Promise<ExecutionResult> {
     return new Promise((resolve) => {
       const startTime = Date.now();
@@ -282,12 +282,12 @@ export class ExecutionService implements IExecutionService {
     });
   }
 
-  // 【AI 李大庆】: 创建安全执行上下文
+  // 创建安全执行上下文
   private createSecureContext(_options: ExecutionOptions): vm.Context {
     const context = vm.createContext({
       __output: [],
       __errors: [],
-      // 【AI 李大庆】: 提供安全的全局对象
+      // 提供安全的全局对象
       Buffer,
       setTimeout: (fn: () => void, delay: number) => {
         if (delay > 5000) throw new Error('Timeout too long');
@@ -297,7 +297,7 @@ export class ExecutionService implements IExecutionService {
         if (delay < 100) throw new Error('Interval too short');
         return setInterval(fn, delay);
       },
-      // 【AI 李大庆】: 受限的require函数
+      // 受限的require函数
       require: (module: string) => {
         const allowedModules = ['util', 'crypto', 'path'];
         if (!allowedModules.includes(module)) {
@@ -310,7 +310,7 @@ export class ExecutionService implements IExecutionService {
     return context;
   }
 
-  // 【AI 李大庆】: 生成安全建议
+  // 生成安全建议
   private generateSecurityRecommendations(issues: SecurityIssue[]): string[] {
     const recommendations: string[] = [];
 
@@ -337,7 +337,7 @@ export class ExecutionService implements IExecutionService {
     return recommendations;
   }
 
-  // 【AI 李大庆】: 确保临时目录存在
+  // 确保临时目录存在
   private async ensureTempDirectory(): Promise<void> {
     try {
       await fs.ensureDir(this.tempDir);
@@ -346,7 +346,7 @@ export class ExecutionService implements IExecutionService {
     }
   }
 
-  // 【AI 李大庆】: 清理临时文件
+  // 清理临时文件
   async cleanup(): Promise<void> {
     try {
       await fs.remove(this.tempDir);
@@ -357,7 +357,7 @@ export class ExecutionService implements IExecutionService {
   }
 }
 
-// 【AI 李大庆】: Node.js沙箱实现
+// Node.js沙箱实现
 class NodeSandbox implements Sandbox {
   private id: string;
   private directory: string;
@@ -373,12 +373,12 @@ class NodeSandbox implements Sandbox {
     this.logger = logger;
   }
 
-  // 【AI 李大庆】: 执行代码
+  // 执行代码
   async execute(code: string): Promise<ExecutionResult> {
     const startTime = Date.now();
     
     try {
-      // 【AI 李大庆】: 创建受限的执行环境
+      // 创建受限的执行环境
       const context = vm.createContext({
         console: {
           log: (...args: any[]) => this.output.push(args.join(' ')),
@@ -386,7 +386,7 @@ class NodeSandbox implements Sandbox {
           warn: (...args: any[]) => this.output.push('WARN: ' + args.join(' ')),
           info: (...args: any[]) => this.output.push('INFO: ' + args.join(' '))
         },
-        // 【AI 李大庆】: 受限的全局对象
+        // 受限的全局对象
         Buffer,
         JSON,
         Math,
@@ -399,7 +399,7 @@ class NodeSandbox implements Sandbox {
         RegExp
       });
 
-      // 【AI 李大庆】: 执行代码
+      // 执行代码
       vm.runInContext(code, context, {
         timeout: this.config.timeout,
         displayErrors: true,
@@ -430,17 +430,17 @@ class NodeSandbox implements Sandbox {
     }
   }
 
-  // 【AI 李大庆】: 获取输出
+  // 获取输出
   getOutput(): string[] {
     return [...this.output];
   }
 
-  // 【AI 李大庆】: 获取错误
+  // 获取错误
   getErrors(): string[] {
     return [...this.errors];
   }
 
-  // 【AI 李大庆】: 清理沙箱
+  // 清理沙箱
   async cleanup(): Promise<void> {
     try {
       await fs.remove(this.directory);
@@ -450,4 +450,3 @@ class NodeSandbox implements Sandbox {
     }
   }
 }
-// 【AI 李大庆】end: 安全执行服务实现

@@ -1,4 +1,4 @@
-// 【AI 李大庆】start: 聊天管理器实现
+// 聊天管理器实现
 import readline from 'readline';
 import chalk from 'chalk';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,11 +22,11 @@ export class ChatManager {
   private currentSession: ChatSession | null = null;
   private rl: readline.Interface | null = null;
   private sessionsDir: string;
-  // 【AI 李大庆】: 添加等待响应状态标志
+  // 添加等待响应状态标志
   private isWaitingForResponse: boolean = false;
-  // 【AI 李大庆】: 添加UI管理器
+  // 添加UI管理器
   private uiManager: UIManager;
-  // 【AI 李大庆】: 添加文件编辑服务
+  // 添加文件编辑服务
   private fileEditService: FileEditService;
 
   constructor(
@@ -38,30 +38,30 @@ export class ChatManager {
     this.configManager = configManager;
     this.logger = logger;
     
-    // 【AI 李大庆】: 初始化UI管理器
+    // 初始化UI管理器
     this.uiManager = new UIManager(configManager);
     
-    // 【AI 李大庆】: 初始化文件编辑服务
+    // 初始化文件编辑服务
     this.fileEditService = new FileEditService(configManager, logger);
     
-    // 【AI 李大庆】: 设置会话存储目录
+    // 设置会话存储目录
     this.sessionsDir = path.join(os.homedir(), '.ai-cli-chat', 'sessions');
     this.ensureSessionsDirectory();
   }
 
-  // 【AI 李大庆】: 启动聊天会话
+  // 启动聊天会话
   async startSession(_options: any): Promise<void> {
     try {
-      // 【AI 李大庆】: 显示界面
+      // 显示界面
       this.uiManager.displayInterface();
       
-      // 【AI 李大庆】: 创建新会话
+      // 创建新会话
       this.currentSession = this.createNewSession();
       
-      // 【AI 李大庆】: 设置readline接口
+      // 设置readline接口
       this.setupReadlineInterface();
       
-      // 【AI 李大庆】: 开始聊天循环
+      // 开始聊天循环
       await this.startChatLoop();
       
     } catch (error) {
@@ -70,7 +70,7 @@ export class ChatManager {
     }
   }
 
-  // 【AI 李大庆】: 创建新会话
+  // 创建新会话
   private createNewSession(): ChatSession {
     const session: ChatSession = {
       id: uuidv4(),
@@ -94,7 +94,7 @@ export class ChatManager {
     return session;
   }
 
-  // 【AI 李大庆】: 设置readline接口
+  // 设置readline接口
   private setupReadlineInterface(): void {
     this.rl = readline.createInterface({
       input: process.stdin,
@@ -102,14 +102,14 @@ export class ChatManager {
       prompt: chalk.cyan('> ')
     });
 
-    // 【AI 李大庆】: 处理Ctrl+C
+    // 处理Ctrl+C
     this.rl.on('SIGINT', () => {
       this.handleExit();
     });
 
-    // 【AI 李大庆】: 处理输入
+    // 处理输入
     this.rl.on('line', async (input) => {
-      // 【AI 李大庆】: 如果正在等待响应，忽略输入
+      // 如果正在等待响应，忽略输入
       if (this.isWaitingForResponse) {
         this.uiManager.displayWaitingMessage();
         return;
@@ -118,7 +118,7 @@ export class ChatManager {
     });
   }
 
-  // 【AI 李大庆】: 开始聊天循环
+  // 开始聊天循环
   private async startChatLoop(): Promise<void> {
     if (!this.rl || !this.currentSession) {
       throw new Error('Chat session not properly initialized');
@@ -128,29 +128,29 @@ export class ChatManager {
     this.rl.prompt();
   }
 
-  // 【AI 李大庆】: 处理用户输入
+  // 处理用户输入
   private async handleUserInput(input: string): Promise<void> {
     if (!this.currentSession || !this.rl) {
       return;
     }
 
-    // 【AI 李大庆】: 处理空输入
+    // 处理空输入
     if (!input) {
       this.rl.prompt();
       return;
     }
 
-    // 【AI 李大庆】: 处理命令
+    // 处理命令
     if (input.startsWith('/')) {
       await this.handleCommand(input);
       return;
     }
 
     try {
-      // 【AI 李大庆】: 设置等待响应状态
+      // 设置等待响应状态
       this.isWaitingForResponse = true;
 
-      // 【AI 李大庆】: 添加用户消息到会话
+      // 添加用户消息到会话
       const userMessage: ChatMessage = {
         id: uuidv4(),
         role: 'user',
@@ -161,13 +161,13 @@ export class ChatManager {
       this.currentSession.messages.push(userMessage);
       this.updateSessionMetadata();
 
-      // 【AI 李大庆】: 显示用户消息
+      // 显示用户消息
       this.uiManager.displayUserMessage(input);
 
-      // 【AI 李大庆】: 显示AI响应开始
+      // 显示AI响应开始
       this.uiManager.displayAIMessageStart();
 
-      // 【AI 李大庆】: 获取AI响应
+      // 获取AI响应
       let assistantResponse = '';
       const chatStream = this.ollamaProvider.chat(this.currentSession.messages, {
         systemPrompt: this.getSystemPrompt()
@@ -180,10 +180,10 @@ export class ChatManager {
         }
       }
 
-      // 【AI 李大庆】: 显示AI响应结束
+      // 显示AI响应结束
       this.uiManager.displayAIMessageEnd();
 
-      // 【AI 李大庆】: 添加AI响应到会话
+      // 添加AI响应到会话
       const assistantMessage: ChatMessage = {
         id: uuidv4(),
         role: 'assistant',
@@ -194,21 +194,21 @@ export class ChatManager {
       this.currentSession.messages.push(assistantMessage);
       this.updateSessionMetadata();
 
-      // 【AI 李大庆】: 自动保存会话
+      // 自动保存会话
       await this.saveCurrentSession();
 
     } catch (error) {
       this.logger.error('Error processing user input:', error);
       this.uiManager.displayError('Sorry, I encountered an error. Please try again.');
     } finally {
-      // 【AI 李大庆】: 重置等待响应状态
+      // 重置等待响应状态
       this.isWaitingForResponse = false;
     }
 
     this.rl.prompt();
   }
 
-  // 【AI 李大庆】: 处理命令
+  // 处理命令
   private async handleCommand(command: string): Promise<void> {
     const [cmd] = command.slice(1).split(' ');
 
@@ -257,12 +257,12 @@ export class ChatManager {
     }
   }
 
-  // 【AI 李大庆】: 显示帮助信息
+  // 显示帮助信息
   private showHelp(): void {
     this.uiManager.displayHelp();
   }
 
-  // 【AI 李大庆】: 显示可用模型
+  // 显示可用模型
   private async showModels(): Promise<void> {
     try {
       const progress = this.logger.createProgress('Fetching available models...');
@@ -277,12 +277,12 @@ export class ChatManager {
     }
   }
 
-  // 【AI 李大庆】: 显示配置
+  // 显示配置
   private showConfig(): void {
     this.uiManager.displayConfig();
   }
 
-  // 【AI 李大庆】: 清除会话
+  // 清除会话
   private async clearSession(): Promise<void> {
     if (this.currentSession) {
       this.currentSession.messages = [];
@@ -291,7 +291,7 @@ export class ChatManager {
     }
   }
 
-  // 【AI 李大庆】: 显示会话历史
+  // 显示会话历史
   private async showSessionHistory(): Promise<void> {
     if (!this.currentSession) {
       this.uiManager.displaySessionHistory([]);
@@ -300,7 +300,7 @@ export class ChatManager {
     this.uiManager.displaySessionHistory(this.currentSession.messages);
   }
 
-  // 【AI 李大庆】: 处理退出
+  // 处理退出
   private handleExit(): void {
     this.uiManager.displayExitMessage();
     
@@ -318,7 +318,7 @@ export class ChatManager {
     }
   }
 
-  // 【AI 李大庆】: 获取系统提示
+  // 获取系统提示
   private getSystemPrompt(): string {
     return `You are an AI assistant specialized in helping developers with coding tasks. You can:
 1. Generate code in various programming languages
@@ -330,7 +330,7 @@ export class ChatManager {
 Be helpful, concise, and provide practical solutions. When generating code, include comments and follow best practices.`;
   }
 
-  // 【AI 李大庆】: 更新会话元数据
+  // 更新会话元数据
   private updateSessionMetadata(): void {
     if (this.currentSession) {
       this.currentSession.metadata.totalMessages = this.currentSession.messages.length;
@@ -338,7 +338,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 保存当前会话
+  // 保存当前会话
   private async saveCurrentSession(): Promise<void> {
     if (!this.currentSession) {
       return;
@@ -353,7 +353,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 确保会话目录存在
+  // 确保会话目录存在
   private async ensureSessionsDirectory(): Promise<void> {
     try {
       await fs.ensureDir(this.sessionsDir);
@@ -362,7 +362,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 列出会话
+  // 列出会话
   async listSessions(): Promise<void> {
     try {
       const files = await fs.readdir(this.sessionsDir);
@@ -392,7 +392,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 显示特定会话
+  // 显示特定会话
   async showSession(sessionId: string): Promise<void> {
     try {
       const sessionPath = path.join(this.sessionsDir, `${sessionId}.json`);
@@ -415,7 +415,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 删除会话
+  // 删除会话
   async deleteSession(sessionId: string): Promise<void> {
     try {
       const sessionPath = path.join(this.sessionsDir, `${sessionId}.json`);
@@ -426,7 +426,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 清除所有会话
+  // 清除所有会话
   async clearAllSessions(): Promise<void> {
     try {
       await fs.emptyDir(this.sessionsDir);
@@ -436,14 +436,14 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 导出会话
+  // 导出会话
   async exportSession(sessionId: string): Promise<void> {
     try {
       const sessionPath = path.join(this.sessionsDir, `${sessionId}.json`);
       const sessionData = await fs.readFile(sessionPath, 'utf-8');
       const session: ChatSession = JSON.parse(sessionData);
 
-      // 【AI 李大庆】: 生成Markdown
+      // 生成Markdown
       let markdown = `# Chat Session: ${session.id}\n\n`;
       markdown += `**Started:** ${new Date(session.startTime).toLocaleString()}\n`;
       markdown += `**Messages:** ${session.messages.length}\n\n`;
@@ -463,7 +463,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 处理文件编辑命令
+  // 处理文件编辑命令
   private async handleFileEdit(command: string): Promise<void> {
     const parts = command.split(' ');
     if (parts.length < 2) {
@@ -482,7 +482,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
 
     try {
       if (lineNumber && newContent) {
-        // 【AI 李大庆】: 替换指定行
+        // 替换指定行
         const result = await this.fileEditService.replaceLine(filePath, lineNumber, newContent);
         if (result.success) {
           this.uiManager.displaySuccess(`Line ${lineNumber} updated in ${filePath}`);
@@ -490,7 +490,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
           this.uiManager.displayError(result.error || 'Failed to edit file');
         }
       } else {
-        // 【AI 李大庆】: 显示文件信息
+        // 显示文件信息
         const fileInfo = await this.fileEditService.getFileInfo(filePath);
         if (fileInfo.exists) {
           console.log(chalk.cyan(`\n📄 File: ${filePath}`));
@@ -507,7 +507,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 处理文件读取命令
+  // 处理文件读取命令
   private async handleFileRead(command: string): Promise<void> {
     const parts = command.split(' ');
     if (parts.length < 2) {
@@ -532,7 +532,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 处理文件写入命令
+  // 处理文件写入命令
   private async handleFileWrite(command: string): Promise<void> {
     const parts = command.split(' ');
     if (parts.length < 3) {
@@ -563,7 +563,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 处理文件删除命令
+  // 处理文件删除命令
   private async handleFileDelete(command: string): Promise<void> {
     const parts = command.split(' ');
     if (parts.length < 2) {
@@ -592,7 +592,7 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 
-  // 【AI 李大庆】: 清理资源
+  // 清理资源
   async cleanup(): Promise<void> {
     if (this.rl) {
       this.rl.close();
@@ -603,4 +603,3 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     }
   }
 }
-// 【AI 李大庆】end: 聊天管理器实现

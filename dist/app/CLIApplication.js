@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CLIApplication = void 0;
-// 【AI 李大庆】start: CLI应用程序主类
+// CLI应用程序主类
 const chalk_1 = __importDefault(require("chalk"));
 const ChatManager_1 = require("../core/ChatManager");
 const OllamaProvider_1 = require("../providers/OllamaProvider");
@@ -15,13 +15,13 @@ class CLIApplication {
         this.configManager = configManager;
         this.logger = logger;
     }
-    // 【AI 李大庆】: 启动应用程序
+    // 启动应用程序
     async start() {
         try {
             this.logger.info('Starting AI CLI Chat application...');
-            // 【AI 李大庆】: 初始化Ollama提供商
+            // 初始化Ollama提供商
             await this.initializeOllamaProvider();
-            // 【AI 李大庆】: 初始化聊天管理器
+            // 初始化聊天管理器
             await this.initializeChatManager();
             this.logger.success('Application started successfully');
         }
@@ -30,7 +30,7 @@ class CLIApplication {
             throw error;
         }
     }
-    // 【AI 李大庆】: 处理命令
+    // 处理命令
     async handleCommand(command, args) {
         this.logger.debug(`Handling command: ${command} with args:`, args);
         switch (command) {
@@ -42,15 +42,15 @@ class CLIApplication {
                 this.logger.warn(`Unknown command: ${command}`);
         }
     }
-    // 【AI 李大庆】: 启动聊天会话
+    // 启动聊天会话
     async startChatSession(options) {
         try {
             if (!this.chatManager) {
                 await this.initializeChatManager();
             }
-            // 【AI 李大庆】: 显示欢迎信息
+            // 显示欢迎信息
             this.displayWelcomeMessage();
-            // 【AI 李大庆】: 启动聊天会话
+            // 启动聊天会话
             await this.chatManager.startSession(options);
         }
         catch (error) {
@@ -58,39 +58,39 @@ class CLIApplication {
             throw error;
         }
     }
-    // 【AI 李大庆】: 处理配置命令
+    // 处理配置命令
     async handleConfigCommand(options) {
         try {
             if (options.list) {
-                // 【AI 李大庆】: 显示当前配置
+                // 显示当前配置
                 const config = this.configManager.getConfig();
                 console.log(chalk_1.default.cyan('📋 Current Configuration:'));
                 console.log(JSON.stringify(config, null, 2));
             }
             else if (options.set) {
-                // 【AI 李大庆】: 设置配置值
+                // 设置配置值
                 const [key, value] = options.set.split('=');
                 if (!key || value === undefined) {
                     throw new Error('Invalid format. Use: --set key=value');
                 }
-                // 【AI 李大庆】: 尝试解析JSON值
+                // 尝试解析JSON值
                 let parsedValue = value;
                 try {
                     parsedValue = JSON.parse(value);
                 }
                 catch {
-                    // 【AI 李大庆】: 如果不是JSON，保持字符串
+                    // 如果不是JSON，保持字符串
                 }
                 await this.configManager.setConfig(key, parsedValue);
                 this.logger.success(`Configuration updated: ${key} = ${parsedValue}`);
             }
             else if (options.get) {
-                // 【AI 李大庆】: 获取配置值
+                // 获取配置值
                 const value = this.configManager.getConfigValue(options.get);
                 console.log(chalk_1.default.cyan(`${options.get}:`), value);
             }
             else if (options.reset) {
-                // 【AI 李大庆】: 重置配置
+                // 重置配置
                 await this.configManager.resetConfig();
                 this.logger.success('Configuration reset to defaults');
             }
@@ -103,14 +103,14 @@ class CLIApplication {
             throw error;
         }
     }
-    // 【AI 李大庆】: 处理模型命令
+    // 处理模型命令
     async handleModelsCommand(options) {
         try {
             if (!this.ollamaProvider) {
                 await this.initializeOllamaProvider();
             }
             if (options.list) {
-                // 【AI 李大庆】: 列出可用模型
+                // 列出可用模型
                 const progress = this.logger.createProgress('Fetching available models...');
                 progress.start();
                 try {
@@ -127,13 +127,13 @@ class CLIApplication {
                 }
             }
             else if (options.pull) {
-                // 【AI 李大庆】: 拉取模型
+                // 拉取模型
                 console.log(chalk_1.default.cyan(`🔄 Pulling model: ${options.pull}`));
                 console.log(chalk_1.default.yellow('Note: This operation should be done through Ollama CLI directly.'));
                 console.log(chalk_1.default.gray(`Run: ollama pull ${options.pull}`));
             }
             else if (options.remove) {
-                // 【AI 李大庆】: 删除模型
+                // 删除模型
                 console.log(chalk_1.default.cyan(`🗑️  Removing model: ${options.remove}`));
                 console.log(chalk_1.default.yellow('Note: This operation should be done through Ollama CLI directly.'));
                 console.log(chalk_1.default.gray(`Run: ollama rm ${options.remove}`));
@@ -147,30 +147,30 @@ class CLIApplication {
             throw error;
         }
     }
-    // 【AI 李大庆】: 处理历史命令
+    // 处理历史命令
     async handleHistoryCommand(options) {
         try {
             if (!this.chatManager) {
                 await this.initializeChatManager();
             }
             if (options.list) {
-                // 【AI 李大庆】: 列出聊天会话
+                // 列出聊天会话
                 await this.chatManager.listSessions();
             }
             else if (options.show) {
-                // 【AI 李大庆】: 显示特定会话
+                // 显示特定会话
                 await this.chatManager.showSession(options.show);
             }
             else if (options.delete) {
-                // 【AI 李大庆】: 删除特定会话
+                // 删除特定会话
                 await this.chatManager.deleteSession(options.delete);
             }
             else if (options.clear) {
-                // 【AI 李大庆】: 清除所有历史
+                // 清除所有历史
                 await this.chatManager.clearAllSessions();
             }
             else if (options.export) {
-                // 【AI 李大庆】: 导出会话
+                // 导出会话
                 await this.chatManager.exportSession(options.export);
             }
             else {
@@ -182,7 +182,7 @@ class CLIApplication {
             throw error;
         }
     }
-    // 【AI 李大庆】: 关闭应用程序
+    // 关闭应用程序
     async shutdown() {
         try {
             this.logger.info('Shutting down application...');
@@ -195,7 +195,7 @@ class CLIApplication {
             this.logger.error('Error during shutdown:', error);
         }
     }
-    // 【AI 李大庆】: 初始化Ollama提供商
+    // 初始化Ollama提供商
     async initializeOllamaProvider() {
         const config = this.configManager.getConfig();
         this.ollamaProvider = new OllamaProvider_1.OllamaProvider(config.ollama, this.logger);
@@ -216,14 +216,14 @@ class CLIApplication {
             throw error;
         }
     }
-    // 【AI 李大庆】: 初始化聊天管理器
+    // 初始化聊天管理器
     async initializeChatManager() {
         if (!this.ollamaProvider) {
             await this.initializeOllamaProvider();
         }
         this.chatManager = new ChatManager_1.ChatManager(this.ollamaProvider, this.configManager, this.logger);
     }
-    // 【AI 李大庆】: 显示欢迎信息
+    // 显示欢迎信息
     displayWelcomeMessage() {
         console.log(chalk_1.default.cyan('\n🤖 Welcome to AI CLI Chat!'));
         console.log(chalk_1.default.gray('Type your message and press Enter to chat with AI.'));
@@ -232,5 +232,4 @@ class CLIApplication {
     }
 }
 exports.CLIApplication = CLIApplication;
-// 【AI 李大庆】end: CLI应用程序主类
 //# sourceMappingURL=CLIApplication.js.map

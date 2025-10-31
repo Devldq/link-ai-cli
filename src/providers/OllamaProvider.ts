@@ -1,4 +1,4 @@
-// 【AI 李大庆】start: Ollama AI 提供商实现
+// Ollama AI 提供商实现
 import { Ollama } from 'ollama';
 import { 
   AIProvider, 
@@ -23,18 +23,18 @@ export class OllamaProvider implements AIProvider {
     this.config = config;
     this.logger = logger;
     
-    // 【AI 李大庆】: 初始化Ollama客户端
+    // 初始化Ollama客户端
     this.client = new Ollama({
       host: config.endpoint
     });
   }
 
-  // 【AI 李大庆】: 连接到Ollama服务
+  // 连接到Ollama服务
   async connect(): Promise<boolean> {
     try {
       this.logger.debug(`Connecting to Ollama at ${this.config.endpoint}`);
       
-      // 【AI 李大庆】: 测试连接
+      // 测试连接
       await this.client.list();
       this.isConnected = true;
       
@@ -47,7 +47,7 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 检查服务是否可用
+  // 检查服务是否可用
   async isAvailable(): Promise<boolean> {
     try {
       await this.client.list();
@@ -57,7 +57,7 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 列出可用模型
+  // 列出可用模型
   async listModels(): Promise<Model[]> {
     try {
       this.ensureConnected();
@@ -75,7 +75,7 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 生成流式响应
+  // 生成流式响应
   async* generateStream(prompt: string, options: GenerationOptions = {}): AsyncIterable<string> {
     try {
       this.ensureConnected();
@@ -104,7 +104,7 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 聊天对话
+  // 聊天对话
   async* chat(messages: ChatMessage[], options: ChatOptions = {}): AsyncIterable<ChatResponse> {
     try {
       this.ensureConnected();
@@ -112,13 +112,13 @@ export class OllamaProvider implements AIProvider {
       const model = options.model || this.config.model;
       this.logger.debug(`Starting chat with model: ${model}`);
 
-      // 【AI 李大庆】: 转换消息格式
+      // 转换消息格式
       const ollamaMessages = messages.map(msg => ({
         role: msg.role,
         content: msg.content
       }));
 
-      // 【AI 李大庆】: 添加系统提示
+      // 添加系统提示
       if (options.systemPrompt) {
         ollamaMessages.unshift({
           role: 'system',
@@ -153,7 +153,7 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 获取模型信息
+  // 获取模型信息
   async getModelInfo(modelName: string): Promise<any> {
     try {
       this.ensureConnected();
@@ -164,7 +164,7 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 检查模型是否存在
+  // 检查模型是否存在
   async hasModel(modelName: string): Promise<boolean> {
     try {
       const models = await this.listModels();
@@ -174,16 +174,16 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 获取当前配置
+  // 获取当前配置
   getConfig(): OllamaConfig {
     return { ...this.config };
   }
 
-  // 【AI 李大庆】: 更新配置
+  // 更新配置
   updateConfig(newConfig: Partial<OllamaConfig>): void {
     this.config = { ...this.config, ...newConfig };
     
-    // 【AI 李大庆】: 如果端点改变，重新创建客户端
+    // 如果端点改变，重新创建客户端
     if (newConfig.endpoint) {
       this.client = new Ollama({
         host: newConfig.endpoint
@@ -192,14 +192,14 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 确保已连接
+  // 确保已连接
   private ensureConnected(): void {
     if (!this.isConnected) {
       throw new OllamaConnectionError('Not connected to Ollama. Call connect() first.');
     }
   }
 
-  // 【AI 李大庆】: 格式化文件大小
+  // 格式化文件大小
   private formatSize(bytes: number): string {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let size = bytes;
@@ -213,7 +213,7 @@ export class OllamaProvider implements AIProvider {
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   }
 
-  // 【AI 李大庆】: 测试连接
+  // 测试连接
   async testConnection(): Promise<{ success: boolean; latency?: number; error?: string }> {
     const startTime = Date.now();
     
@@ -233,10 +233,10 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
-  // 【AI 李大庆】: 获取服务器版本
+  // 获取服务器版本
   async getVersion(): Promise<string> {
     try {
-      // 【AI 李大庆】: Ollama API 可能不直接提供版本信息
+      // Ollama API 可能不直接提供版本信息
       // 这里返回一个占位符，实际实现可能需要调用特定的API
       return 'Unknown';
     } catch (error) {
@@ -245,4 +245,3 @@ export class OllamaProvider implements AIProvider {
     }
   }
 }
-// 【AI 李大庆】end: Ollama AI 提供商实现

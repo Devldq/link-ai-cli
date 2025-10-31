@@ -1,4 +1,4 @@
-// 【AI 李大庆】start: UI管理器实现
+// UI管理器实现
 import chalk from 'chalk';
 import figlet from 'figlet';
 import { ConfigManager } from '../core/ConfigManager';
@@ -10,21 +10,21 @@ export class UIManager {
     this.configManager = configManager;
   }
 
-  // 【AI 李大庆】: 清屏并显示完整界面
+  // 清屏并显示完整界面
   public displayInterface(): void {
     this.clearScreen();
     this.displayHeader();
     this.displaySeparator();
   }
 
-  // 【AI 李大庆】: 清屏
+  // 清屏
   private clearScreen(): void {
     process.stdout.write('\x1b[2J\x1b[0f');
   }
 
-  // 【AI 李大庆】: 显示头部信息
+  // 显示头部信息
   private displayHeader(): void {
-    // 【AI 李大庆】: 显示标题
+    // 显示标题
     const title = figlet.textSync('LINK', {
       font: 'ANSI Shadow',
       horizontalLayout: 'default',
@@ -33,13 +33,13 @@ export class UIManager {
     
     console.log(chalk.magenta.bold(title));
     
-    // 【AI 李大庆】: 显示版本信息
+    // 显示版本信息
     const config = this.configManager.getConfig();
     console.log(chalk.gray(`LINK v1.0.0 - AI Chat Assistant`));
     console.log(chalk.gray(`Model: ${config.ollama.model}`));
     console.log();
     
-    // 【AI 李大庆】: 显示快捷命令提示
+    // 显示快捷命令提示
     console.log(chalk.cyan('Tips to getting started:'));
     console.log(chalk.gray('1. Input a message to chat with AI'));
     console.log(chalk.gray('2. /help for more commands'));
@@ -49,66 +49,66 @@ export class UIManager {
     console.log();
   }
 
-  // 【AI 李大庆】: 显示分隔线
+  // 显示分隔线
   private displaySeparator(): void {
     const width = process.stdout.columns || 80;
     console.log(chalk.gray('─'.repeat(width)));
     console.log();
   }
 
-  // 【AI 李大庆】: 显示用户消息
+  // 显示用户消息
   public displayUserMessage(message: string): void {
     console.log(chalk.blue('user'));
     console.log(chalk.white(message));
     console.log();
   }
 
-  // 【AI 李大庆】: 显示AI消息开始
+  // 显示AI消息开始
   public displayAIMessageStart(): void {
     process.stdout.write(chalk.green('link\n'));
   }
 
-  // 【AI 李大庆】: 显示AI消息内容（流式）
+  // 显示AI消息内容（流式）
   public displayAIMessageChunk(chunk: string): void {
     process.stdout.write(chalk.white(chunk));
   }
 
-  // 【AI 李大庆】: 显示AI消息结束
+  // 显示AI消息结束
   public displayAIMessageEnd(): void {
     console.log('\n');
   }
 
-  // 【AI 李大庆】: 显示输入提示符
+  // 显示输入提示符
   public displayPrompt(): void {
     process.stdout.write(chalk.cyan('> '));
   }
 
-  // 【AI 李大庆】: 显示等待提示
+  // 显示等待提示
   public displayWaitingMessage(): void {
     console.log(chalk.yellow('⏳ Please wait for the AI response to complete...'));
   }
 
-  // 【AI 李大庆】: 显示错误消息
+  // 显示错误消息
   public displayError(message: string): void {
     console.log(chalk.red(`❌ ${message}`));
   }
 
-  // 【AI 李大庆】: 显示成功消息
+  // 显示成功消息
   public displaySuccess(message: string): void {
     console.log(chalk.green(`✅ ${message}`));
   }
 
-  // 【AI 李大庆】: 显示警告消息
+  // 显示警告消息
   public displayWarning(message: string): void {
     console.log(chalk.yellow(`⚠️  ${message}`));
   }
 
-  // 【AI 李大庆】: 显示信息消息
+  // 显示信息消息
   public displayInfo(message: string): void {
     console.log(chalk.cyan(`ℹ️  ${message}`));
   }
 
-  // 【AI 李大庆】: 显示帮助信息
+  // 显示帮助信息
   public displayHelp(): void {
     console.log(chalk.cyan('\n📚 Available Commands:'));
     console.log(chalk.gray('  /help     - Show this help message'));
@@ -129,7 +129,7 @@ export class UIManager {
     console.log(chalk.gray('  - Use natural language to describe what you want\n'));
   }
 
-  // 【AI 李大庆】: 显示模型列表
+  // 显示模型列表
   public displayModels(models: Array<{name: string, size: string}>, currentModel: string): void {
     console.log(chalk.cyan('\n🤖 Available Models:'));
     models.forEach(model => {
@@ -139,7 +139,7 @@ export class UIManager {
     console.log();
   }
 
-  // 【AI 李大庆】: 显示配置信息
+  // 显示配置信息
   public displayConfig(): void {
     const config = this.configManager.getConfig();
     console.log(chalk.cyan('\n⚙️  Current Configuration:'));
@@ -151,7 +151,7 @@ export class UIManager {
     console.log();
   }
 
-  // 【AI 李大庆】: 显示会话历史
+  // 显示会话历史
   public displaySessionHistory(messages: Array<{role: string, content: string, timestamp: Date}>): void {
     if (messages.length === 0) {
       console.log(chalk.yellow('📝 No messages in current session'));
@@ -167,19 +167,18 @@ export class UIManager {
     console.log();
   }
 
-  // 【AI 李大庆】: 显示启动消息
+  // 显示启动消息
   public displayStartupMessage(): void {
     console.log(chalk.green('🚀 Chat session started! Type your message or use commands.\n'));
   }
 
-  // 【AI 李大庆】: 显示退出消息
+  // 显示退出消息
   public displayExitMessage(): void {
     console.log(chalk.yellow('\n👋 Saving session and exiting...'));
   }
 
-  // 【AI 李大庆】: 显示再见消息
+  // 显示再见消息
   public displayGoodbyeMessage(): void {
     console.log(chalk.green('✅ Session saved. Goodbye!'));
   }
 }
-// 【AI 李大庆】end: UI管理器实现

@@ -41,5 +41,4 @@ class SecurityError extends AICliError {
     }
 }
 exports.SecurityError = SecurityError;
-// 【AI 李大庆】end: 核心类型定义文件
 //# sourceMappingURL=index.js.map

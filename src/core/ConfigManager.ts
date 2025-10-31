@@ -1,4 +1,4 @@
-// 【AI 李大庆】start: 配置管理器实现
+// 配置管理器实现
 import { cosmiconfig } from 'cosmiconfig';
 import Joi from 'joi';
 import fs from 'fs-extra';
@@ -11,7 +11,7 @@ export class ConfigManager {
   private configPath: string | null = null;
   private readonly explorer = cosmiconfig('ai-cli-chat');
 
-  // 【AI 李大庆】: 默认配置
+  // 默认配置
   private readonly defaultConfig: AppConfig = {
     ollama: {
       endpoint: 'http://localhost:11434',
@@ -52,7 +52,7 @@ export class ConfigManager {
     }
   };
 
-  // 【AI 李大庆】: 配置验证模式
+  // 配置验证模式
   private readonly configSchema = Joi.object({
     ollama: Joi.object({
       endpoint: Joi.string().uri().required(),
@@ -93,20 +93,20 @@ export class ConfigManager {
     }).required()
   });
 
-  // 【AI 李大庆】: 加载配置
+  // 加载配置
   async loadConfig(configPath?: string): Promise<void> {
     try {
       let result;
       
       if (configPath) {
-        // 【AI 李大庆】: 使用指定的配置文件路径
+        // 使用指定的配置文件路径
         const configContent = await fs.readFile(configPath, 'utf-8');
         result = {
           config: JSON.parse(configContent),
           filepath: configPath
         };
       } else {
-        // 【AI 李大庆】: 自动搜索配置文件
+        // 自动搜索配置文件
         result = await this.explorer.search();
       }
 
@@ -114,12 +114,12 @@ export class ConfigManager {
         this.configPath = result.filepath;
         this.config = this.mergeWithDefaults(result.config);
       } else {
-        // 【AI 李大庆】: 使用默认配置
+        // 使用默认配置
         this.config = { ...this.defaultConfig };
         await this.createDefaultConfigFile();
       }
 
-      // 【AI 李大庆】: 验证配置
+      // 验证配置
       await this.validateConfig();
 
     } catch (error) {
@@ -127,7 +127,7 @@ export class ConfigManager {
     }
   }
 
-  // 【AI 李大庆】: 获取配置
+  // 获取配置
   getConfig(): AppConfig {
     if (!this.config) {
       throw new ConfigurationError('Configuration not loaded. Call loadConfig() first.');
@@ -135,13 +135,13 @@ export class ConfigManager {
     return this.config;
   }
 
-  // 【AI 李大庆】: 设置配置值
+  // 设置配置值
   async setConfig(key: string, value: any): Promise<void> {
     if (!this.config) {
       throw new ConfigurationError('Configuration not loaded.');
     }
 
-    // 【AI 李大庆】: 使用点号分隔的键路径设置值
+    // 使用点号分隔的键路径设置值
     const keys = key.split('.');
     let current: any = this.config;
     
@@ -160,14 +160,14 @@ export class ConfigManager {
       current[lastKey] = value;
     }
 
-    // 【AI 李大庆】: 验证更新后的配置
+    // 验证更新后的配置
     await this.validateConfig();
     
-    // 【AI 李大庆】: 保存配置
+    // 保存配置
     await this.saveConfig();
   }
 
-  // 【AI 李大庆】: 获取配置值
+  // 获取配置值
   getConfigValue(key: string): any {
     if (!this.config) {
       throw new ConfigurationError('Configuration not loaded.');
@@ -187,13 +187,13 @@ export class ConfigManager {
     return current;
   }
 
-  // 【AI 李大庆】: 重置为默认配置
+  // 重置为默认配置
   async resetConfig(): Promise<void> {
     this.config = { ...this.defaultConfig };
     await this.saveConfig();
   }
 
-  // 【AI 李大庆】: 保存配置
+  // 保存配置
   async saveConfig(): Promise<void> {
     if (!this.config) {
       throw new ConfigurationError('No configuration to save.');
@@ -210,7 +210,7 @@ export class ConfigManager {
     }
   }
 
-  // 【AI 李大庆】: 验证配置
+  // 验证配置
   private async validateConfig(): Promise<void> {
     if (!this.config) {
       throw new ConfigurationError('No configuration to validate.');
@@ -222,7 +222,7 @@ export class ConfigManager {
     }
   }
 
-  // 【AI 李大庆】: 合并默认配置
+  // 合并默认配置
   private mergeWithDefaults(userConfig: Partial<AppConfig>): AppConfig {
     return {
       ollama: { ...this.defaultConfig.ollama, ...userConfig.ollama },
@@ -234,7 +234,7 @@ export class ConfigManager {
     };
   }
 
-  // 【AI 李大庆】: 创建默认配置文件
+  // 创建默认配置文件
   private async createDefaultConfigFile(): Promise<void> {
     const configPath = this.getDefaultConfigPath();
     
@@ -243,20 +243,19 @@ export class ConfigManager {
       await fs.writeFile(configPath, JSON.stringify(this.defaultConfig, null, 2), 'utf-8');
       this.configPath = configPath;
     } catch (error) {
-      // 【AI 李大庆】: 如果无法创建配置文件，继续使用内存中的默认配置
+      // 如果无法创建配置文件，继续使用内存中的默认配置
       console.warn(`Warning: Could not create default config file: ${error}`);
     }
   }
 
-  // 【AI 李大庆】: 获取默认配置文件路径
+  // 获取默认配置文件路径
   private getDefaultConfigPath(): string {
     const homeDir = os.homedir();
     return path.join(homeDir, '.ai-cli-chat', 'config.json');
   }
 
-  // 【AI 李大庆】: 获取配置文件路径
+  // 获取配置文件路径
   getConfigPath(): string | null {
     return this.configPath;
   }
 }
-// 【AI 李大庆】end: 配置管理器实现

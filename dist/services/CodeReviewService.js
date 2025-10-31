@@ -7,25 +7,25 @@ class CodeReviewService {
         this.logger = logger;
         this.defaultRules = this.initializeDefaultRules();
     }
-    // 【AI 李大庆】: 审查代码
+    // 审查代码
     async reviewCode(code, options) {
         try {
             this.logger.debug('Starting code review');
             const issues = [];
             const enabledRules = options.rules.filter(rule => rule.enabled);
-            // 【AI 李大庆】: 执行各类检查
+            // 执行各类检查
             for (const rule of enabledRules) {
                 if (options.severity.includes(rule.severity)) {
                     const ruleIssues = await this.executeRule(code, rule, options.language);
                     issues.push(...ruleIssues);
                 }
             }
-            // 【AI 李大庆】: 使用AI进行深度分析
+            // 使用AI进行深度分析
             const aiIssues = await this.performAIAnalysis(code, options.language);
             issues.push(...aiIssues);
-            // 【AI 李大庆】: 计算评分
+            // 计算评分
             const score = this.calculateScore(issues);
-            // 【AI 李大庆】: 生成摘要
+            // 生成摘要
             const summary = this.generateSummary(issues, score);
             const result = {
                 issues,
@@ -40,13 +40,13 @@ class CodeReviewService {
             throw error;
         }
     }
-    // 【AI 李大庆】: 应用自动修复
+    // 应用自动修复
     async applyFixes(code, fixes) {
         try {
             this.logger.debug(`Applying ${fixes.length} auto-fixes`);
             let fixedCode = code;
             const lines = fixedCode.split('\n');
-            // 【AI 李大庆】: 按行号倒序排序，避免修复时行号偏移
+            // 按行号倒序排序，避免修复时行号偏移
             const sortedFixes = fixes.sort((a, b) => b.line - a.line);
             for (const fix of sortedFixes) {
                 if (fix.line > 0 && fix.line <= lines.length) {
@@ -65,7 +65,7 @@ class CodeReviewService {
             throw error;
         }
     }
-    // 【AI 李大庆】: 生成审查报告
+    // 生成审查报告
     async generateReport(results) {
         try {
             const overallScore = results.reduce((sum, result) => sum + result.score, 0) / results.length;
@@ -82,7 +82,7 @@ class CodeReviewService {
             throw error;
         }
     }
-    // 【AI 李大庆】: 初始化默认规则
+    // 初始化默认规则
     initializeDefaultRules() {
         return [
             {
@@ -129,7 +129,7 @@ class CodeReviewService {
             }
         ];
     }
-    // 【AI 李大庆】: 执行规则检查
+    // 执行规则检查
     async executeRule(code, rule, language) {
         const issues = [];
         switch (rule.id) {
@@ -154,7 +154,7 @@ class CodeReviewService {
         }
         return issues;
     }
-    // 【AI 李大庆】: AI深度分析
+    // AI深度分析
     async performAIAnalysis(code, language) {
         try {
             const prompt = `Analyze the following ${language} code for potential issues:
@@ -191,7 +191,7 @@ Please provide a detailed analysis in the following JSON format:
             for await (const chunk of stream) {
                 response += chunk;
             }
-            // 【AI 李大庆】: 解析AI响应
+            // 解析AI响应
             const aiIssues = this.parseAIResponse(response);
             return aiIssues;
         }
@@ -200,10 +200,10 @@ Please provide a detailed analysis in the following JSON format:
             return [];
         }
     }
-    // 【AI 李大庆】: 解析AI响应
+    // 解析AI响应
     parseAIResponse(response) {
         try {
-            // 【AI 李大庆】: 尝试提取JSON
+            // 尝试提取JSON
             const jsonMatch = response.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
                 const parsed = JSON.parse(jsonMatch[0]);
@@ -227,12 +227,12 @@ Please provide a detailed analysis in the following JSON format:
         }
         return [];
     }
-    // 【AI 李大庆】: 检查SQL注入
+    // 检查SQL注入
     checkSQLInjection(code, _language) {
         const issues = [];
         const lines = code.split('\n');
         lines.forEach((line, index) => {
-            // 【AI 李大庆】: 检查字符串拼接的SQL查询
+            // 检查字符串拼接的SQL查询
             if (line.includes('SELECT') && (line.includes('+') || line.includes('${') || line.includes('%s'))) {
                 issues.push({
                     id: `sql-injection-${index}`,
@@ -249,12 +249,12 @@ Please provide a detailed analysis in the following JSON format:
         });
         return issues;
     }
-    // 【AI 李大庆】: 检查XSS
+    // 检查XSS
     checkXSS(code, _language) {
         const issues = [];
         const lines = code.split('\n');
         lines.forEach((line, index) => {
-            // 【AI 李大庆】: 检查innerHTML的使用
+            // 检查innerHTML的使用
             if (line.includes('innerHTML') && !line.includes('sanitize')) {
                 issues.push({
                     id: `xss-${index}`,
@@ -271,12 +271,12 @@ Please provide a detailed analysis in the following JSON format:
         });
         return issues;
     }
-    // 【AI 李大庆】: 检查循环性能
+    // 检查循环性能
     checkLoopPerformance(code, _language) {
         const issues = [];
         const lines = code.split('\n');
         lines.forEach((line, index) => {
-            // 【AI 李大庆】: 检查嵌套循环
+            // 检查嵌套循环
             if (line.includes('for') && lines.slice(index + 1, index + 10).some(l => l.includes('for'))) {
                 issues.push({
                     id: `nested-loop-${index}`,
@@ -293,12 +293,12 @@ Please provide a detailed analysis in the following JSON format:
         });
         return issues;
     }
-    // 【AI 李大庆】: 检查命名约定
+    // 检查命名约定
     checkNamingConvention(code, _language) {
         const issues = [];
         const lines = code.split('\n');
         lines.forEach((line, index) => {
-            // 【AI 李大庆】: 检查变量命名（简化版）
+            // 检查变量命名（简化版）
             const varMatches = line.match(/(?:let|const|var)\s+([a-zA-Z_$][a-zA-Z0-9_$]*)/g);
             if (varMatches) {
                 varMatches.forEach(match => {
@@ -321,7 +321,7 @@ Please provide a detailed analysis in the following JSON format:
         });
         return issues;
     }
-    // 【AI 李大庆】: 检查函数长度
+    // 检查函数长度
     checkFunctionLength(code, _language) {
         const issues = [];
         const lines = code.split('\n');
@@ -356,11 +356,11 @@ Please provide a detailed analysis in the following JSON format:
         });
         return issues;
     }
-    // 【AI 李大庆】: 检查复杂度
+    // 检查复杂度
     checkComplexity(code, _language) {
         const issues = [];
         const lines = code.split('\n');
-        // 【AI 李大庆】: 简化的圈复杂度计算
+        // 简化的圈复杂度计算
         let complexity = 1; // 基础复杂度
         let functionStart = -1;
         lines.forEach((line, index) => {
@@ -368,7 +368,7 @@ Please provide a detailed analysis in the following JSON format:
                 functionStart = index;
                 complexity = 1;
             }
-            // 【AI 李大庆】: 增加复杂度的关键字
+            // 增加复杂度的关键字
             const complexityKeywords = ['if', 'else', 'while', 'for', 'switch', 'case', 'catch', '&&', '||', '?'];
             complexityKeywords.forEach(keyword => {
                 const matches = line.match(new RegExp(`\\b${keyword}\\b`, 'g'));
@@ -395,7 +395,7 @@ Please provide a detailed analysis in the following JSON format:
         });
         return issues;
     }
-    // 【AI 李大庆】: 计算评分
+    // 计算评分
     calculateScore(issues) {
         let score = 100;
         issues.forEach(issue => {
@@ -413,7 +413,7 @@ Please provide a detailed analysis in the following JSON format:
         });
         return Math.max(0, score);
     }
-    // 【AI 李大庆】: 生成摘要
+    // 生成摘要
     generateSummary(issues, score) {
         const errorCount = issues.filter(i => i.severity === 'error').length;
         const warningCount = issues.filter(i => i.severity === 'warning').length;
@@ -426,7 +426,7 @@ Please provide a detailed analysis in the following JSON format:
             score
         };
     }
-    // 【AI 李大庆】: 生成建议
+    // 生成建议
     async generateRecommendations(results) {
         const recommendations = [];
         const allIssues = results.flatMap(r => r.issues);
@@ -442,7 +442,7 @@ Please provide a detailed analysis in the following JSON format:
         if (avgScore < 70) {
             recommendations.push('Overall code quality needs improvement');
         }
-        // 【AI 李大庆】: 按类别分组问题
+        // 按类别分组问题
         const securityIssues = allIssues.filter(i => i.category === 'security').length;
         const performanceIssues = allIssues.filter(i => i.category === 'performance').length;
         if (securityIssues > 0) {
@@ -453,19 +453,18 @@ Please provide a detailed analysis in the following JSON format:
         }
         return recommendations;
     }
-    // 【AI 李大庆】: 获取默认规则
+    // 获取默认规则
     getDefaultRules() {
         return [...this.defaultRules];
     }
-    // 【AI 李大庆】: 添加自定义规则
+    // 添加自定义规则
     addCustomRule(rule) {
         this.defaultRules.push(rule);
     }
-    // 【AI 李大庆】: 移除规则
+    // 移除规则
     removeRule(ruleId) {
         this.defaultRules = this.defaultRules.filter(rule => rule.id !== ruleId);
     }
 }
 exports.CodeReviewService = CodeReviewService;
-// 【AI 李大庆】end: 代码审查服务实现
 //# sourceMappingURL=CodeReviewService.js.map

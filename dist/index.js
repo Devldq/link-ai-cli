@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 "use strict";
-// 【AI 李大庆】start: 应用程序主入口文件
+// 应用程序主入口文件
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -14,14 +14,14 @@ const Logger_1 = require("./utils/Logger");
 const program = new commander_1.Command();
 async function main() {
     try {
-        // 【AI 李大庆】: 初始化配置管理器
+        // 初始化配置管理器
         const configManager = new ConfigManager_1.ConfigManager();
         await configManager.loadConfig();
-        // 【AI 李大庆】: 初始化日志记录器
+        // 初始化日志记录器
         const logger = new Logger_1.Logger(configManager.getConfig().ui.verboseOutput);
-        // 【AI 李大庆】: 创建CLI应用实例
+        // 创建CLI应用实例
         const app = new CLIApplication_1.CLIApplication(configManager, logger);
-        // 【AI 李大庆】: 设置程序基本信息
+        // 设置程序基本信息
         program
             .name('link')
             .description('AI-powered command line chat application with Ollama integration')
@@ -29,7 +29,7 @@ async function main() {
             .option('-v, --verbose', 'enable verbose output')
             .option('-q, --quiet', 'enable quiet mode')
             .option('-c, --config <path>', 'specify config file path');
-        // 【AI 李大庆】: 注册主要命令 - 启动聊天界面
+        // 注册主要命令 - 启动聊天界面
         program
             .command('chat', { isDefault: true })
             .alias('l')
@@ -40,7 +40,7 @@ async function main() {
             .action(async (options) => {
             await app.startChatSession(options);
         });
-        // 【AI 李大庆】: 注册配置命令
+        // 注册配置命令
         program
             .command('config')
             .description('Manage application configuration')
@@ -51,7 +51,7 @@ async function main() {
             .action(async (options) => {
             await app.handleConfigCommand(options);
         });
-        // 【AI 李大庆】: 注册模型管理命令
+        // 注册模型管理命令
         program
             .command('models')
             .description('Manage Ollama models')
@@ -61,7 +61,7 @@ async function main() {
             .action(async (options) => {
             await app.handleModelsCommand(options);
         });
-        // 【AI 李大庆】: 注册历史管理命令
+        // 注册历史管理命令
         program
             .command('history')
             .description('Manage chat history')
@@ -73,7 +73,7 @@ async function main() {
             .action(async (options) => {
             await app.handleHistoryCommand(options);
         });
-        // 【AI 李大庆】: 全局错误处理
+        // 全局错误处理
         process.on('uncaughtException', (error) => {
             logger.error('Uncaught exception:', error);
             process.exit(1);
@@ -82,7 +82,7 @@ async function main() {
             logger.error('Unhandled rejection at:', promise, 'reason:', reason);
             process.exit(1);
         });
-        // 【AI 李大庆】: 优雅退出处理
+        // 优雅退出处理
         process.on('SIGINT', async () => {
             console.log(chalk_1.default.yellow('\n\n👋 Goodbye! Thanks for using AI CLI Chat.'));
             await app.shutdown();
@@ -92,7 +92,7 @@ async function main() {
             await app.shutdown();
             process.exit(0);
         });
-        // 【AI 李大庆】: 解析命令行参数并执行
+        // 解析命令行参数并执行
         await program.parseAsync(process.argv);
     }
     catch (error) {
@@ -100,12 +100,11 @@ async function main() {
         process.exit(1);
     }
 }
-// 【AI 李大庆】: 启动应用程序
+// 启动应用程序
 if (require.main === module) {
     main().catch((error) => {
         console.error(chalk_1.default.red('❌ Application error:'), error);
         process.exit(1);
     });
 }
-// 【AI 李大庆】end: 应用程序主入口文件
 //# sourceMappingURL=index.js.map

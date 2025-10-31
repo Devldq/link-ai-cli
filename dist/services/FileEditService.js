@@ -4,16 +4,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FileEditService = void 0;
-// 【AI 李大庆】start: 文件编辑服务实现
+// 文件编辑服务实现
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const path_1 = __importDefault(require("path"));
 class FileEditService {
     constructor(configManager, logger) {
-        this.maxFileSize = 10 * 1024 * 1024; // 【AI 李大庆】: 10MB 限制
+        this.maxFileSize = 10 * 1024 * 1024; // 10MB 限制
         this.configManager = configManager;
         this.logger = logger;
     }
-    // 【AI 李大庆】: 读取文件内容
+    // 读取文件内容
     async readFile(filePath, options = {}) {
         try {
             const { encoding = 'utf8', validatePath = true } = options;
@@ -33,7 +33,7 @@ class FileEditService {
             throw error;
         }
     }
-    // 【AI 李大庆】: 写入文件内容
+    // 写入文件内容
     async writeFile(filePath, content, options = {}) {
         try {
             const { backup = true, encoding = 'utf8', createIfNotExists = true, validatePath = true } = options;
@@ -42,12 +42,12 @@ class FileEditService {
             }
             let originalContent = '';
             let backupPath;
-            // 【AI 李大庆】: 检查文件是否存在
+            // 检查文件是否存在
             const fileExists = await fs_extra_1.default.pathExists(filePath);
             if (fileExists) {
-                // 【AI 李大庆】: 读取原始内容用于备份
+                // 读取原始内容用于备份
                 originalContent = await this.readFile(filePath, { validatePath: false });
-                // 【AI 李大庆】: 创建备份
+                // 创建备份
                 if (backup) {
                     backupPath = await this.createBackup(filePath, originalContent);
                 }
@@ -55,9 +55,9 @@ class FileEditService {
             else if (!createIfNotExists) {
                 throw new Error(`File does not exist: ${filePath}`);
             }
-            // 【AI 李大庆】: 确保目录存在
+            // 确保目录存在
             await fs_extra_1.default.ensureDir(path_1.default.dirname(filePath));
-            // 【AI 李大庆】: 写入新内容
+            // 写入新内容
             await fs_extra_1.default.writeFile(filePath, content, encoding);
             const result = {
                 success: true,
@@ -88,7 +88,7 @@ class FileEditService {
             };
         }
     }
-    // 【AI 李大庆】: 追加内容到文件
+    // 追加内容到文件
     async appendToFile(filePath, content, options = {}) {
         try {
             const existingContent = await fs_extra_1.default.pathExists(filePath)
@@ -107,16 +107,16 @@ class FileEditService {
             };
         }
     }
-    // 【AI 李大庆】: 在指定行插入内容
+    // 在指定行插入内容
     async insertAtLine(filePath, lineNumber, content, options = {}) {
         try {
             const originalContent = await this.readFile(filePath, options);
             const lines = originalContent.split('\n');
-            // 【AI 李大庆】: 验证行号
+            // 验证行号
             if (lineNumber < 1 || lineNumber > lines.length + 1) {
                 throw new Error(`Invalid line number: ${lineNumber}. File has ${lines.length} lines.`);
             }
-            // 【AI 李大庆】: 插入内容
+            // 插入内容
             lines.splice(lineNumber - 1, 0, content);
             const newContent = lines.join('\n');
             return await this.writeFile(filePath, newContent, options);
@@ -131,16 +131,16 @@ class FileEditService {
             };
         }
     }
-    // 【AI 李大庆】: 替换指定行的内容
+    // 替换指定行的内容
     async replaceLine(filePath, lineNumber, newContent, options = {}) {
         try {
             const originalContent = await this.readFile(filePath, options);
             const lines = originalContent.split('\n');
-            // 【AI 李大庆】: 验证行号
+            // 验证行号
             if (lineNumber < 1 || lineNumber > lines.length) {
                 throw new Error(`Invalid line number: ${lineNumber}. File has ${lines.length} lines.`);
             }
-            // 【AI 李大庆】: 替换内容
+            // 替换内容
             lines[lineNumber - 1] = newContent;
             const updatedContent = lines.join('\n');
             return await this.writeFile(filePath, updatedContent, options);
@@ -155,16 +155,16 @@ class FileEditService {
             };
         }
     }
-    // 【AI 李大庆】: 删除指定行
+    // 删除指定行
     async deleteLine(filePath, lineNumber, options = {}) {
         try {
             const originalContent = await this.readFile(filePath, options);
             const lines = originalContent.split('\n');
-            // 【AI 李大庆】: 验证行号
+            // 验证行号
             if (lineNumber < 1 || lineNumber > lines.length) {
                 throw new Error(`Invalid line number: ${lineNumber}. File has ${lines.length} lines.`);
             }
-            // 【AI 李大庆】: 删除行
+            // 删除行
             lines.splice(lineNumber - 1, 1);
             const newContent = lines.join('\n');
             return await this.writeFile(filePath, newContent, options);
@@ -179,7 +179,7 @@ class FileEditService {
             };
         }
     }
-    // 【AI 李大庆】: 查找并替换文本
+    // 查找并替换文本
     async findAndReplace(filePath, searchText, replaceText, options = {}) {
         try {
             const { global = true } = options;
@@ -206,7 +206,7 @@ class FileEditService {
             };
         }
     }
-    // 【AI 李大庆】: 获取文件信息
+    // 获取文件信息
     async getFileInfo(filePath) {
         try {
             const exists = await fs_extra_1.default.pathExists(filePath);
@@ -225,7 +225,7 @@ class FileEditService {
                 };
             }
             const stats = await fs_extra_1.default.stat(filePath);
-            // 【AI 李大庆】: 检查权限
+            // 检查权限
             const permissions = {
                 readable: await this.checkPermission(filePath, fs_extra_1.default.constants.R_OK),
                 writable: await this.checkPermission(filePath, fs_extra_1.default.constants.W_OK),
@@ -245,7 +245,7 @@ class FileEditService {
             throw error;
         }
     }
-    // 【AI 李大庆】: 创建备份文件
+    // 创建备份文件
     async createBackup(filePath, content) {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const backupPath = `${filePath}.backup.${timestamp}`;
@@ -253,23 +253,23 @@ class FileEditService {
         this.logger.info('Backup created', { originalPath: filePath, backupPath });
         return backupPath;
     }
-    // 【AI 李大庆】: 验证文件路径
+    // 验证文件路径
     async validateFilePath(filePath) {
         const config = this.configManager.getConfig();
         const restrictedPaths = config.security.restrictedPaths;
         const resolvedPath = path_1.default.resolve(filePath);
-        // 【AI 李大庆】: 检查是否在受限路径中
+        // 检查是否在受限路径中
         for (const restrictedPath of restrictedPaths) {
             if (resolvedPath.startsWith(path_1.default.resolve(restrictedPath))) {
                 throw new Error(`Access denied: Path is restricted: ${restrictedPath}`);
             }
         }
-        // 【AI 李大庆】: 检查路径遍历攻击
+        // 检查路径遍历攻击
         if (filePath.includes('..') || filePath.includes('~')) {
             throw new Error('Invalid file path: Path traversal detected');
         }
     }
-    // 【AI 李大庆】: 检查文件权限
+    // 检查文件权限
     async checkPermission(filePath, mode) {
         try {
             await fs_extra_1.default.access(filePath, mode);
@@ -279,7 +279,7 @@ class FileEditService {
             return false;
         }
     }
-    // 【AI 李大庆】: 删除文件
+    // 删除文件
     async deleteFile(filePath, options = {}) {
         try {
             const { backup = true, validatePath = true } = options;
@@ -296,12 +296,12 @@ class FileEditService {
             }
             let backupPath;
             let originalContent;
-            // 【AI 李大庆】: 创建备份
+            // 创建备份
             if (backup) {
                 originalContent = await this.readFile(filePath, { validatePath: false });
                 backupPath = await this.createBackup(filePath, originalContent);
             }
-            // 【AI 李大庆】: 删除文件
+            // 删除文件
             await fs_extra_1.default.remove(filePath);
             this.logger.info('File deleted successfully', { filePath, backupCreated: !!backupPath });
             const result = {
@@ -328,5 +328,4 @@ class FileEditService {
     }
 }
 exports.FileEditService = FileEditService;
-// 【AI 李大庆】end: 文件编辑服务实现
 //# sourceMappingURL=FileEditService.js.map

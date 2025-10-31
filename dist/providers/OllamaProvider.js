@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.OllamaProvider = void 0;
-// 【AI 李大庆】start: Ollama AI 提供商实现
+// Ollama AI 提供商实现
 const ollama_1 = require("ollama");
 const types_1 = require("../types");
 class OllamaProvider {
@@ -10,16 +10,16 @@ class OllamaProvider {
         this.isConnected = false;
         this.config = config;
         this.logger = logger;
-        // 【AI 李大庆】: 初始化Ollama客户端
+        // 初始化Ollama客户端
         this.client = new ollama_1.Ollama({
             host: config.endpoint
         });
     }
-    // 【AI 李大庆】: 连接到Ollama服务
+    // 连接到Ollama服务
     async connect() {
         try {
             this.logger.debug(`Connecting to Ollama at ${this.config.endpoint}`);
-            // 【AI 李大庆】: 测试连接
+            // 测试连接
             await this.client.list();
             this.isConnected = true;
             this.logger.debug('Successfully connected to Ollama');
@@ -31,7 +31,7 @@ class OllamaProvider {
             return false;
         }
     }
-    // 【AI 李大庆】: 检查服务是否可用
+    // 检查服务是否可用
     async isAvailable() {
         try {
             await this.client.list();
@@ -41,7 +41,7 @@ class OllamaProvider {
             return false;
         }
     }
-    // 【AI 李大庆】: 列出可用模型
+    // 列出可用模型
     async listModels() {
         try {
             this.ensureConnected();
@@ -58,7 +58,7 @@ class OllamaProvider {
             throw new types_1.OllamaConnectionError(`Failed to list models: ${error}`);
         }
     }
-    // 【AI 李大庆】: 生成流式响应
+    // 生成流式响应
     async *generateStream(prompt, options = {}) {
         try {
             this.ensureConnected();
@@ -84,18 +84,18 @@ class OllamaProvider {
             throw new types_1.OllamaConnectionError(`Failed to generate response: ${error}`);
         }
     }
-    // 【AI 李大庆】: 聊天对话
+    // 聊天对话
     async *chat(messages, options = {}) {
         try {
             this.ensureConnected();
             const model = options.model || this.config.model;
             this.logger.debug(`Starting chat with model: ${model}`);
-            // 【AI 李大庆】: 转换消息格式
+            // 转换消息格式
             const ollamaMessages = messages.map(msg => ({
                 role: msg.role,
                 content: msg.content
             }));
-            // 【AI 李大庆】: 添加系统提示
+            // 添加系统提示
             if (options.systemPrompt) {
                 ollamaMessages.unshift({
                     role: 'system',
@@ -128,7 +128,7 @@ class OllamaProvider {
             throw new types_1.OllamaConnectionError(`Failed to chat: ${error}`);
         }
     }
-    // 【AI 李大庆】: 获取模型信息
+    // 获取模型信息
     async getModelInfo(modelName) {
         try {
             this.ensureConnected();
@@ -139,7 +139,7 @@ class OllamaProvider {
             throw new types_1.OllamaConnectionError(`Failed to get model info: ${error}`);
         }
     }
-    // 【AI 李大庆】: 检查模型是否存在
+    // 检查模型是否存在
     async hasModel(modelName) {
         try {
             const models = await this.listModels();
@@ -149,14 +149,14 @@ class OllamaProvider {
             return false;
         }
     }
-    // 【AI 李大庆】: 获取当前配置
+    // 获取当前配置
     getConfig() {
         return { ...this.config };
     }
-    // 【AI 李大庆】: 更新配置
+    // 更新配置
     updateConfig(newConfig) {
         this.config = { ...this.config, ...newConfig };
-        // 【AI 李大庆】: 如果端点改变，重新创建客户端
+        // 如果端点改变，重新创建客户端
         if (newConfig.endpoint) {
             this.client = new ollama_1.Ollama({
                 host: newConfig.endpoint
@@ -164,13 +164,13 @@ class OllamaProvider {
             this.isConnected = false;
         }
     }
-    // 【AI 李大庆】: 确保已连接
+    // 确保已连接
     ensureConnected() {
         if (!this.isConnected) {
             throw new types_1.OllamaConnectionError('Not connected to Ollama. Call connect() first.');
         }
     }
-    // 【AI 李大庆】: 格式化文件大小
+    // 格式化文件大小
     formatSize(bytes) {
         const units = ['B', 'KB', 'MB', 'GB', 'TB'];
         let size = bytes;
@@ -181,7 +181,7 @@ class OllamaProvider {
         }
         return `${size.toFixed(1)} ${units[unitIndex]}`;
     }
-    // 【AI 李大庆】: 测试连接
+    // 测试连接
     async testConnection() {
         const startTime = Date.now();
         try {
@@ -199,10 +199,10 @@ class OllamaProvider {
             };
         }
     }
-    // 【AI 李大庆】: 获取服务器版本
+    // 获取服务器版本
     async getVersion() {
         try {
-            // 【AI 李大庆】: Ollama API 可能不直接提供版本信息
+            // Ollama API 可能不直接提供版本信息
             // 这里返回一个占位符，实际实现可能需要调用特定的API
             return 'Unknown';
         }
@@ -213,5 +213,4 @@ class OllamaProvider {
     }
 }
 exports.OllamaProvider = OllamaProvider;
-// 【AI 李大庆】end: Ollama AI 提供商实现
 //# sourceMappingURL=OllamaProvider.js.map

@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigManager = void 0;
-// 【AI 李大庆】start: 配置管理器实现
+// 配置管理器实现
 const cosmiconfig_1 = require("cosmiconfig");
 const joi_1 = __importDefault(require("joi"));
 const fs_extra_1 = __importDefault(require("fs-extra"));
@@ -16,7 +16,7 @@ class ConfigManager {
         this.config = null;
         this.configPath = null;
         this.explorer = (0, cosmiconfig_1.cosmiconfig)('ai-cli-chat');
-        // 【AI 李大庆】: 默认配置
+        // 默认配置
         this.defaultConfig = {
             ollama: {
                 endpoint: 'http://localhost:11434',
@@ -56,7 +56,7 @@ class ConfigManager {
                 maxExecutionTime: 10000
             }
         };
-        // 【AI 李大庆】: 配置验证模式
+        // 配置验证模式
         this.configSchema = joi_1.default.object({
             ollama: joi_1.default.object({
                 endpoint: joi_1.default.string().uri().required(),
@@ -97,12 +97,12 @@ class ConfigManager {
             }).required()
         });
     }
-    // 【AI 李大庆】: 加载配置
+    // 加载配置
     async loadConfig(configPath) {
         try {
             let result;
             if (configPath) {
-                // 【AI 李大庆】: 使用指定的配置文件路径
+                // 使用指定的配置文件路径
                 const configContent = await fs_extra_1.default.readFile(configPath, 'utf-8');
                 result = {
                     config: JSON.parse(configContent),
@@ -110,7 +110,7 @@ class ConfigManager {
                 };
             }
             else {
-                // 【AI 李大庆】: 自动搜索配置文件
+                // 自动搜索配置文件
                 result = await this.explorer.search();
             }
             if (result) {
@@ -118,30 +118,30 @@ class ConfigManager {
                 this.config = this.mergeWithDefaults(result.config);
             }
             else {
-                // 【AI 李大庆】: 使用默认配置
+                // 使用默认配置
                 this.config = { ...this.defaultConfig };
                 await this.createDefaultConfigFile();
             }
-            // 【AI 李大庆】: 验证配置
+            // 验证配置
             await this.validateConfig();
         }
         catch (error) {
             throw new types_1.ConfigurationError(`Failed to load configuration: ${error}`);
         }
     }
-    // 【AI 李大庆】: 获取配置
+    // 获取配置
     getConfig() {
         if (!this.config) {
             throw new types_1.ConfigurationError('Configuration not loaded. Call loadConfig() first.');
         }
         return this.config;
     }
-    // 【AI 李大庆】: 设置配置值
+    // 设置配置值
     async setConfig(key, value) {
         if (!this.config) {
             throw new types_1.ConfigurationError('Configuration not loaded.');
         }
-        // 【AI 李大庆】: 使用点号分隔的键路径设置值
+        // 使用点号分隔的键路径设置值
         const keys = key.split('.');
         let current = this.config;
         for (let i = 0; i < keys.length - 1; i++) {
@@ -157,12 +157,12 @@ class ConfigManager {
         if (lastKey) {
             current[lastKey] = value;
         }
-        // 【AI 李大庆】: 验证更新后的配置
+        // 验证更新后的配置
         await this.validateConfig();
-        // 【AI 李大庆】: 保存配置
+        // 保存配置
         await this.saveConfig();
     }
-    // 【AI 李大庆】: 获取配置值
+    // 获取配置值
     getConfigValue(key) {
         if (!this.config) {
             throw new types_1.ConfigurationError('Configuration not loaded.');
@@ -179,12 +179,12 @@ class ConfigManager {
         }
         return current;
     }
-    // 【AI 李大庆】: 重置为默认配置
+    // 重置为默认配置
     async resetConfig() {
         this.config = { ...this.defaultConfig };
         await this.saveConfig();
     }
-    // 【AI 李大庆】: 保存配置
+    // 保存配置
     async saveConfig() {
         if (!this.config) {
             throw new types_1.ConfigurationError('No configuration to save.');
@@ -199,7 +199,7 @@ class ConfigManager {
             throw new types_1.ConfigurationError(`Failed to save configuration: ${error}`);
         }
     }
-    // 【AI 李大庆】: 验证配置
+    // 验证配置
     async validateConfig() {
         if (!this.config) {
             throw new types_1.ConfigurationError('No configuration to validate.');
@@ -209,7 +209,7 @@ class ConfigManager {
             throw new types_1.ConfigurationError(`Invalid configuration: ${error.message}`);
         }
     }
-    // 【AI 李大庆】: 合并默认配置
+    // 合并默认配置
     mergeWithDefaults(userConfig) {
         return {
             ollama: { ...this.defaultConfig.ollama, ...userConfig.ollama },
@@ -220,7 +220,7 @@ class ConfigManager {
             security: { ...this.defaultConfig.security, ...userConfig.security }
         };
     }
-    // 【AI 李大庆】: 创建默认配置文件
+    // 创建默认配置文件
     async createDefaultConfigFile() {
         const configPath = this.getDefaultConfigPath();
         try {
@@ -229,20 +229,19 @@ class ConfigManager {
             this.configPath = configPath;
         }
         catch (error) {
-            // 【AI 李大庆】: 如果无法创建配置文件，继续使用内存中的默认配置
+            // 如果无法创建配置文件，继续使用内存中的默认配置
             console.warn(`Warning: Could not create default config file: ${error}`);
         }
     }
-    // 【AI 李大庆】: 获取默认配置文件路径
+    // 获取默认配置文件路径
     getDefaultConfigPath() {
         const homeDir = os_1.default.homedir();
         return path_1.default.join(homeDir, '.ai-cli-chat', 'config.json');
     }
-    // 【AI 李大庆】: 获取配置文件路径
+    // 获取配置文件路径
     getConfigPath() {
         return this.configPath;
     }
 }
 exports.ConfigManager = ConfigManager;
-// 【AI 李大庆】end: 配置管理器实现
 //# sourceMappingURL=ConfigManager.js.map

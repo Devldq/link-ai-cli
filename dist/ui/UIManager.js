@@ -4,38 +4,38 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UIManager = void 0;
-// 【AI 李大庆】start: UI管理器实现
+// UI管理器实现
 const chalk_1 = __importDefault(require("chalk"));
 const figlet_1 = __importDefault(require("figlet"));
 class UIManager {
     constructor(configManager) {
         this.configManager = configManager;
     }
-    // 【AI 李大庆】: 清屏并显示完整界面
+    // 清屏并显示完整界面
     displayInterface() {
         this.clearScreen();
         this.displayHeader();
         this.displaySeparator();
     }
-    // 【AI 李大庆】: 清屏
+    // 清屏
     clearScreen() {
         process.stdout.write('\x1b[2J\x1b[0f');
     }
-    // 【AI 李大庆】: 显示头部信息
+    // 显示头部信息
     displayHeader() {
-        // 【AI 李大庆】: 显示标题
+        // 显示标题
         const title = figlet_1.default.textSync('LINK', {
             font: 'ANSI Shadow',
             horizontalLayout: 'default',
             verticalLayout: 'default'
         });
         console.log(chalk_1.default.magenta.bold(title));
-        // 【AI 李大庆】: 显示版本信息
+        // 显示版本信息
         const config = this.configManager.getConfig();
         console.log(chalk_1.default.gray(`LINK v1.0.0 - AI Chat Assistant`));
         console.log(chalk_1.default.gray(`Model: ${config.ollama.model}`));
         console.log();
-        // 【AI 李大庆】: 显示快捷命令提示
+        // 显示快捷命令提示
         console.log(chalk_1.default.cyan('Tips to getting started:'));
         console.log(chalk_1.default.gray('1. Input a message to chat with AI'));
         console.log(chalk_1.default.gray('2. /help for more commands'));
@@ -44,55 +44,55 @@ class UIManager {
         console.log(chalk_1.default.gray('5. Ctrl+C to exit'));
         console.log();
     }
-    // 【AI 李大庆】: 显示分隔线
+    // 显示分隔线
     displaySeparator() {
         const width = process.stdout.columns || 80;
         console.log(chalk_1.default.gray('─'.repeat(width)));
         console.log();
     }
-    // 【AI 李大庆】: 显示用户消息
+    // 显示用户消息
     displayUserMessage(message) {
         console.log(chalk_1.default.blue('user'));
         console.log(chalk_1.default.white(message));
         console.log();
     }
-    // 【AI 李大庆】: 显示AI消息开始
+    // 显示AI消息开始
     displayAIMessageStart() {
         process.stdout.write(chalk_1.default.green('link\n'));
     }
-    // 【AI 李大庆】: 显示AI消息内容（流式）
+    // 显示AI消息内容（流式）
     displayAIMessageChunk(chunk) {
         process.stdout.write(chalk_1.default.white(chunk));
     }
-    // 【AI 李大庆】: 显示AI消息结束
+    // 显示AI消息结束
     displayAIMessageEnd() {
         console.log('\n');
     }
-    // 【AI 李大庆】: 显示输入提示符
+    // 显示输入提示符
     displayPrompt() {
         process.stdout.write(chalk_1.default.cyan('> '));
     }
-    // 【AI 李大庆】: 显示等待提示
+    // 显示等待提示
     displayWaitingMessage() {
         console.log(chalk_1.default.yellow('⏳ Please wait for the AI response to complete...'));
     }
-    // 【AI 李大庆】: 显示错误消息
+    // 显示错误消息
     displayError(message) {
         console.log(chalk_1.default.red(`❌ ${message}`));
     }
-    // 【AI 李大庆】: 显示成功消息
+    // 显示成功消息
     displaySuccess(message) {
         console.log(chalk_1.default.green(`✅ ${message}`));
     }
-    // 【AI 李大庆】: 显示警告消息
+    // 显示警告消息
     displayWarning(message) {
         console.log(chalk_1.default.yellow(`⚠️  ${message}`));
     }
-    // 【AI 李大庆】: 显示信息消息
+    // 显示信息消息
     displayInfo(message) {
         console.log(chalk_1.default.cyan(`ℹ️  ${message}`));
     }
-    // 【AI 李大庆】: 显示帮助信息
+    // 显示帮助信息
     displayHelp() {
         console.log(chalk_1.default.cyan('\n📚 Available Commands:'));
         console.log(chalk_1.default.gray('  /help     - Show this help message'));
@@ -112,7 +112,7 @@ class UIManager {
         console.log(chalk_1.default.gray('  - I can work with multiple programming languages'));
         console.log(chalk_1.default.gray('  - Use natural language to describe what you want\n'));
     }
-    // 【AI 李大庆】: 显示模型列表
+    // 显示模型列表
     displayModels(models, currentModel) {
         console.log(chalk_1.default.cyan('\n🤖 Available Models:'));
         models.forEach(model => {
@@ -121,7 +121,7 @@ class UIManager {
         });
         console.log();
     }
-    // 【AI 李大庆】: 显示配置信息
+    // 显示配置信息
     displayConfig() {
         const config = this.configManager.getConfig();
         console.log(chalk_1.default.cyan('\n⚙️  Current Configuration:'));
@@ -132,7 +132,7 @@ class UIManager {
         console.log(chalk_1.default.gray(`  Default Language: ${config.codeGeneration.defaultLanguage}`));
         console.log();
     }
-    // 【AI 李大庆】: 显示会话历史
+    // 显示会话历史
     displaySessionHistory(messages) {
         if (messages.length === 0) {
             console.log(chalk_1.default.yellow('📝 No messages in current session'));
@@ -146,19 +146,18 @@ class UIManager {
         });
         console.log();
     }
-    // 【AI 李大庆】: 显示启动消息
+    // 显示启动消息
     displayStartupMessage() {
         console.log(chalk_1.default.green('🚀 Chat session started! Type your message or use commands.\n'));
     }
-    // 【AI 李大庆】: 显示退出消息
+    // 显示退出消息
     displayExitMessage() {
         console.log(chalk_1.default.yellow('\n👋 Saving session and exiting...'));
     }
-    // 【AI 李大庆】: 显示再见消息
+    // 显示再见消息
     displayGoodbyeMessage() {
         console.log(chalk_1.default.green('✅ Session saved. Goodbye!'));
     }
 }
 exports.UIManager = UIManager;
-// 【AI 李大庆】end: UI管理器实现
 //# sourceMappingURL=UIManager.js.map

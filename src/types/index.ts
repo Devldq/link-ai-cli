@@ -1,4 +1,4 @@
-// 【AI 李大庆】start: 核心类型定义文件
+// 核心类型定义文件
 export interface CLIApplication {
   start(): Promise<void>;
   handleCommand(command: string, args: string[]): Promise<void>;
@@ -368,4 +368,3 @@ export class SecurityError extends AICliError {
   category = 'security';
   severity = 'high' as const;
 }
-// 【AI 李大庆】end: 核心类型定义文件

@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CodeGenerationService = void 0;
-// 【AI 李大庆】start: 代码生成服务实现
+// 代码生成服务实现
 const fs_extra_1 = __importDefault(require("fs-extra"));
 const path_1 = __importDefault(require("path"));
 class CodeGenerationService {
@@ -12,32 +12,32 @@ class CodeGenerationService {
         this.ollamaProvider = ollamaProvider;
         this.logger = logger;
     }
-    // 【AI 李大庆】: 生成代码
+    // 生成代码
     async generateCode(request) {
         try {
             this.logger.debug('Generating code for request:', request);
-            // 【AI 李大庆】: 构建代码生成提示
+            // 构建代码生成提示
             const prompt = this.buildCodeGenerationPrompt(request);
-            // 【AI 李大庆】: 生成代码
+            // 生成代码
             let generatedCode = '';
             const stream = this.ollamaProvider.generateStream(prompt, {
-                temperature: 0.3, // 【AI 李大庆】: 较低的温度以获得更一致的代码
+                temperature: 0.3, // 较低的温度以获得更一致的代码
                 maxTokens: 2048
             });
             for await (const chunk of stream) {
                 generatedCode += chunk;
             }
-            // 【AI 李大庆】: 提取代码块
+            // 提取代码块
             const extractedCode = this.extractCodeFromResponse(generatedCode, request.language);
-            // 【AI 李大庆】: 格式化代码
+            // 格式化代码
             const formattedCode = await this.formatCode(extractedCode, request.language);
-            // 【AI 李大庆】: 添加注释（如果需要）
+            // 添加注释（如果需要）
             const finalCode = request.includeComments
                 ? await this.addComments(formattedCode, request.language)
                 : formattedCode;
-            // 【AI 李大庆】: 生成文件名
+            // 生成文件名
             const filename = this.generateFilename(request);
-            // 【AI 李大庆】: 生成解释
+            // 生成解释
             const explanation = this.extractExplanationFromResponse(generatedCode);
             const result = {
                 code: finalCode,
@@ -54,19 +54,19 @@ class CodeGenerationService {
             throw error;
         }
     }
-    // 【AI 李大庆】: 验证代码
+    // 验证代码
     async validateCode(code, language) {
         try {
             this.logger.debug(`Validating ${language} code`);
             const errors = [];
             const warnings = [];
-            // 【AI 李大庆】: 基本语法检查
+            // 基本语法检查
             const syntaxErrors = await this.checkSyntax(code, language);
             errors.push(...syntaxErrors);
-            // 【AI 李大庆】: 代码风格检查
+            // 代码风格检查
             const styleWarnings = await this.checkCodeStyle(code, language);
             warnings.push(...styleWarnings);
-            // 【AI 李大庆】: 最佳实践检查
+            // 最佳实践检查
             const practiceWarnings = await this.checkBestPractices(code, language);
             warnings.push(...practiceWarnings);
             return {
@@ -80,10 +80,10 @@ class CodeGenerationService {
             throw error;
         }
     }
-    // 【AI 李大庆】: 格式化代码
+    // 格式化代码
     async formatCode(code, language) {
         try {
-            // 【AI 李大庆】: 基本格式化逻辑
+            // 基本格式化逻辑
             let formattedCode = code;
             switch (language.toLowerCase()) {
                 case 'javascript':
@@ -100,7 +100,7 @@ class CodeGenerationService {
                     formattedCode = this.formatGo(code);
                     break;
                 default:
-                    // 【AI 李大庆】: 通用格式化
+                    // 通用格式化
                     formattedCode = this.formatGeneric(code);
             }
             return formattedCode;
@@ -110,10 +110,10 @@ class CodeGenerationService {
             return code;
         }
     }
-    // 【AI 李大庆】: 添加注释
+    // 添加注释
     async addComments(code, language) {
         try {
-            // 【AI 李大庆】: 使用AI生成注释
+            // 使用AI生成注释
             const prompt = `Add helpful comments to the following ${language} code. 
 Keep the original code intact and only add meaningful comments that explain the logic:
 
@@ -130,21 +130,21 @@ Return only the commented code without any explanation.`;
             for await (const chunk of stream) {
                 commentedCode += chunk;
             }
-            // 【AI 李大庆】: 提取注释后的代码
+            // 提取注释后的代码
             const extractedCode = this.extractCodeFromResponse(commentedCode, language);
-            return extractedCode || code; // 【AI 李大庆】: 如果提取失败，返回原代码
+            return extractedCode || code; // 如果提取失败，返回原代码
         }
         catch (error) {
             this.logger.warn('Failed to add comments, returning original code:', error);
             return code;
         }
     }
-    // 【AI 李大庆】: 保存代码到文件
+    // 保存代码到文件
     async saveCodeToFile(code, filePath) {
         try {
-            // 【AI 李大庆】: 确保目录存在
+            // 确保目录存在
             await fs_extra_1.default.ensureDir(path_1.default.dirname(filePath));
-            // 【AI 李大庆】: 写入文件
+            // 写入文件
             await fs_extra_1.default.writeFile(filePath, code, 'utf-8');
             this.logger.success(`Code saved to: ${filePath}`);
         }
@@ -153,7 +153,7 @@ Return only the commented code without any explanation.`;
             throw error;
         }
     }
-    // 【AI 李大庆】: 构建代码生成提示
+    // 构建代码生成提示
     buildCodeGenerationPrompt(request) {
         let prompt = `Generate ${request.language} code based on the following description:\n\n`;
         prompt += `Description: ${request.description}\n\n`;
@@ -183,35 +183,35 @@ Return only the commented code without any explanation.`;
         prompt += `Format your response with code blocks using \`\`\`${request.language}\n`;
         return prompt;
     }
-    // 【AI 李大庆】: 从响应中提取代码
+    // 从响应中提取代码
     extractCodeFromResponse(response, language) {
-        // 【AI 李大庆】: 尝试提取代码块
+        // 尝试提取代码块
         const codeBlockRegex = new RegExp(`\`\`\`${language}\\s*\\n([\\s\\S]*?)\\n\`\`\``, 'i');
         const match = response.match(codeBlockRegex);
         if (match && match[1]) {
             return match[1].trim();
         }
-        // 【AI 李大庆】: 尝试提取通用代码块
+        // 尝试提取通用代码块
         const genericCodeBlockRegex = /```[\w]*\s*\n([\s\S]*?)\n```/;
         const genericMatch = response.match(genericCodeBlockRegex);
         if (genericMatch && genericMatch[1]) {
             return genericMatch[1].trim();
         }
-        // 【AI 李大庆】: 如果没有代码块，返回整个响应
+        // 如果没有代码块，返回整个响应
         return response.trim();
     }
-    // 【AI 李大庆】: 从响应中提取解释
+    // 从响应中提取解释
     extractExplanationFromResponse(response) {
-        // 【AI 李大庆】: 移除代码块，保留解释文本
+        // 移除代码块，保留解释文本
         const withoutCodeBlocks = response.replace(/```[\s\S]*?```/g, '');
         return withoutCodeBlocks.trim();
     }
-    // 【AI 李大庆】: 生成文件名
+    // 生成文件名
     generateFilename(request) {
         if (request.outputPath) {
             return path_1.default.basename(request.outputPath);
         }
-        // 【AI 李大庆】: 基于描述生成文件名
+        // 基于描述生成文件名
         const baseName = request.description
             .toLowerCase()
             .replace(/[^a-z0-9\s]/g, '')
@@ -220,7 +220,7 @@ Return only the commented code without any explanation.`;
         const extension = this.getFileExtension(request.language);
         return `${baseName}${extension}`;
     }
-    // 【AI 李大庆】: 获取文件扩展名
+    // 获取文件扩展名
     getFileExtension(language) {
         const extensions = {
             javascript: '.js',
@@ -239,7 +239,7 @@ Return only the commented code without any explanation.`;
         };
         return extensions[language.toLowerCase()] || '.txt';
     }
-    // 【AI 李大庆】: 生成建议
+    // 生成建议
     generateSuggestions(request, code) {
         const suggestions = [];
         if (!request.includeTests) {
@@ -256,10 +256,10 @@ Return only the commented code without any explanation.`;
         }
         return suggestions;
     }
-    // 【AI 李大庆】: 检查语法
+    // 检查语法
     async checkSyntax(code, language) {
         const errors = [];
-        // 【AI 李大庆】: 基本语法检查（简化版）
+        // 基本语法检查（简化版）
         switch (language.toLowerCase()) {
             case 'javascript':
             case 'typescript':
@@ -271,13 +271,13 @@ Return only the commented code without any explanation.`;
         }
         return errors;
     }
-    // 【AI 李大庆】: 检查代码风格
+    // 检查代码风格
     async checkCodeStyle(code, _language) {
         const warnings = [];
-        // 【AI 李大庆】: 基本风格检查
+        // 基本风格检查
         const lines = code.split('\n');
         lines.forEach((line, index) => {
-            // 【AI 李大庆】: 检查行长度
+            // 检查行长度
             if (line.length > 120) {
                 warnings.push({
                     line: index + 1,
@@ -286,7 +286,7 @@ Return only the commented code without any explanation.`;
                     severity: 'warning'
                 });
             }
-            // 【AI 李大庆】: 检查尾随空格
+            // 检查尾随空格
             if (line.endsWith(' ') || line.endsWith('\t')) {
                 warnings.push({
                     line: index + 1,
@@ -298,10 +298,10 @@ Return only the commented code without any explanation.`;
         });
         return warnings;
     }
-    // 【AI 李大庆】: 检查最佳实践
+    // 检查最佳实践
     async checkBestPractices(code, language) {
         const warnings = [];
-        // 【AI 李大庆】: 基本最佳实践检查
+        // 基本最佳实践检查
         if (language.toLowerCase() === 'javascript' || language.toLowerCase() === 'typescript') {
             if (code.includes('var ')) {
                 warnings.push({
@@ -322,10 +322,10 @@ Return only the commented code without any explanation.`;
         }
         return warnings;
     }
-    // 【AI 李大庆】: JavaScript语法检查
+    // JavaScript语法检查
     checkJavaScriptSyntax(code) {
         const errors = [];
-        // 【AI 李大庆】: 简单的括号匹配检查
+        // 简单的括号匹配检查
         const brackets = { '(': ')', '[': ']', '{': '}' };
         const stack = [];
         for (let i = 0; i < code.length; i++) {
@@ -347,10 +347,10 @@ Return only the commented code without any explanation.`;
         }
         return errors;
     }
-    // 【AI 李大庆】: Python语法检查
+    // Python语法检查
     checkPythonSyntax(code) {
         const errors = [];
-        // 【AI 李大庆】: 简单的缩进检查
+        // 简单的缩进检查
         const lines = code.split('\n');
         let expectedIndent = 0;
         lines.forEach((line, index) => {
@@ -371,9 +371,9 @@ Return only the commented code without any explanation.`;
         });
         return errors;
     }
-    // 【AI 李大庆】: 格式化JavaScript代码
+    // 格式化JavaScript代码
     formatJavaScript(code) {
-        // 【AI 李大庆】: 简单的格式化逻辑
+        // 简单的格式化逻辑
         return code
             .replace(/\s*{\s*/g, ' {\n  ')
             .replace(/\s*}\s*/g, '\n}\n')
@@ -383,31 +383,31 @@ Return only the commented code without any explanation.`;
             .filter(line => line.length > 0)
             .join('\n');
     }
-    // 【AI 李大庆】: 格式化Python代码
+    // 格式化Python代码
     formatPython(code) {
-        // 【AI 李大庆】: 简单的Python格式化
+        // 简单的Python格式化
         return code
             .split('\n')
             .map(line => line.trimEnd())
             .join('\n');
     }
-    // 【AI 李大庆】: 格式化Java代码
+    // 格式化Java代码
     formatJava(code) {
-        return this.formatJavaScript(code); // 【AI 李大庆】: 使用类似的格式化逻辑
+        return this.formatJavaScript(code); // 使用类似的格式化逻辑
     }
-    // 【AI 李大庆】: 格式化Go代码
+    // 格式化Go代码
     formatGo(code) {
-        return this.formatJavaScript(code); // 【AI 李大庆】: 使用类似的格式化逻辑
+        return this.formatJavaScript(code); // 使用类似的格式化逻辑
     }
-    // 【AI 李大庆】: 通用格式化
+    // 通用格式化
     formatGeneric(code) {
         return code.trim();
     }
-    // 【AI 李大庆】: 获取行号
+    // 获取行号
     getLineNumber(code, position) {
         return code.substring(0, position).split('\n').length;
     }
-    // 【AI 李大庆】: 获取列号
+    // 获取列号
     getColumnNumber(code, position) {
         const lines = code.substring(0, position).split('\n');
         const lastLine = lines[lines.length - 1];
@@ -415,5 +415,4 @@ Return only the commented code without any explanation.`;
     }
 }
 exports.CodeGenerationService = CodeGenerationService;
-// 【AI 李大庆】end: 代码生成服务实现
 //# sourceMappingURL=CodeGenerationService.js.map
