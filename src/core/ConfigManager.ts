@@ -14,7 +14,7 @@ export class ConfigManager {
   // 默认配置
   private readonly defaultConfig: AppConfig = {
     ollama: {
-      endpoint: 'http://localhost:11434',
+      endpoint: 'http://172.22.126.78:11434',
       model: 'gpt-oss:20b',
       timeout: 30000,
       maxTokens: 2048,
