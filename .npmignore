@@ -1,0 +1,52 @@
+# Ignore build artifacts
+dist/
+build/
+*.tsbuildinfo
+
+# Ignore node_modules
+node_modules/
+
+# Ignore logs
+*.log
+logs/
+
+# Ignore OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Ignore temporary files
+tmp/
+temp/
+*.tmp
+
+# Ignore coverage reports
+coverage/
+*.lcov
+
+# Ignore package-lock for libraries
+package-lock.json
+
+# Keep important files for npm package
+!dist/
+!README.md
+!CHANGELOG.md
+!LICENSE

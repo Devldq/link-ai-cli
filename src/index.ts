@@ -21,10 +21,22 @@ async function main(): Promise<void> {
     // 创建CLI应用实例
     const app = new CLIApplication(configManager, logger);
 
+    // 检查Node.js版本
+    const nodeVersion = process.version;
+    const versionParts = nodeVersion.slice(1).split('.');
+    const majorVersion = parseInt(versionParts[0] || '0');
+    
+    if (majorVersion < 16) {
+      console.error(chalk.red('❌ Error: Node.js 16.0.0 or higher is required'));
+      console.error(chalk.yellow(`Current version: ${nodeVersion}`));
+      console.error(chalk.blue('Please upgrade Node.js: https://nodejs.org/'));
+      process.exit(1);
+    }
+
     // 设置程序基本信息
     program
-      .name('link')
-      .description('AI-powered command line chat application with Ollama integration')
+      .name('l')
+      .description('An intelligent AI-powered command-line chat assistant with document processing, code review, and file management capabilities')
       .version('1.0.0')
       .option('-v, --verbose', 'enable verbose output')
       .option('-q, --quiet', 'enable quiet mode')
@@ -33,7 +45,6 @@ async function main(): Promise<void> {
     // 注册主要命令 - 启动聊天界面
     program
       .command('chat', { isDefault: true })
-      .alias('l')
       .description('Start interactive chat session with AI')
       .option('-m, --model <model>', 'specify AI model to use')
       .option('-t, --temperature <temp>', 'set AI temperature (0.0-1.0)')

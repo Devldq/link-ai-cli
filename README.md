@@ -1,271 +1,281 @@
-# AI CLI Chat
+# LinChat
 
-一个基于 Ollama 的 AI 命令行聊天应用程序，支持代码生成、代码审查和安全执行。
+An intelligent AI-powered command-line chat assistant with document processing, code review, and file management capabilities.
 
-## 功能特性
+## 🚀 Features
 
-- 🤖 **AI 聊天**: 与 Ollama AI 模型进行交互式对话
-- 💻 **代码生成**: 支持多种编程语言的代码生成
-- 🔍 **代码审查**: 自动检测代码中的安全漏洞、性能问题和最佳实践
-- 🛡️ **安全执行**: 在沙箱环境中安全执行代码
-- 📝 **会话管理**: 保存和管理聊天历史
-- ⚙️ **配置管理**: 灵活的配置系统
+- **Interactive AI Chat**: Seamless integration with Ollama for powerful AI conversations
+- **Smart Intent Analysis**: Intelligent detection of user intent with multiple operation options
+- **Code Review & Modification**: Advanced code analysis, review, and automated improvements
+- **Document Processing**: Support for Markdown, JSON, YAML, and text files
+- **File Management**: Read, write, search, and convert documents with ease
+- **Auto-Save**: Automatic saving of AI-generated code and content
+- **Session Management**: Persistent chat history and session management
+- **Multi-Language Support**: Support for various programming languages and file formats
 
-## 安装
-
-### 前置要求
-
-- Node.js >= 16.0.0
-- npm >= 8.0.0
-- Ollama (需要先安装并运行 Ollama 服务)
-
-### 安装 Ollama
+## 📦 Installation
 
 ```bash
-# macOS
-brew install ollama
-
-# 或者从官网下载: https://ollama.ai
+npm install -g linchat
 ```
 
-### 安装 AI CLI Chat
+## 🔧 Prerequisites
+
+1. **Node.js 16.0.0 or higher**
+2. **Ollama** must be installed and running
+   - Download from: https://ollama.ai/
+   - Pull a model: `ollama pull llama2`
+
+## 🎯 Quick Start
+
+After installation, you can use either command to start:
 
 ```bash
-# 克隆项目
-git clone <repository-url>
-cd ai-cli-chat
-
-# 安装依赖
-npm install
-
-# 构建项目
-npm run build
-
-# 全局安装
-npm link
-```
-
-## 使用方法
-
-### 启动聊天
-
-```bash
-# 使用 link 命令启动
-link
-
-# 或者使用 l 别名
 l
+# or
+linchat
 ```
 
-### 命令行选项
+This will start the interactive AI chat assistant.
 
-```bash
-link --help                    # 显示帮助信息
-link --verbose                 # 启用详细输出
-link --config <path>           # 指定配置文件路径
-link config --list             # 显示当前配置
-link models --list             # 列出可用模型
-link history --list            # 显示聊天历史
-```
+## 🔧 Troubleshooting Installation
 
-### 聊天命令
+If the `l` command is not recognized after installation:
 
-在聊天界面中，你可以使用以下命令：
-
-- `/help` - 显示帮助信息
-- `/exit` - 退出聊天
-- `/clear` - 清除当前聊天历史
-- `/save` - 保存当前会话
-- `/models` - 列出可用的 AI 模型
-- `/config` - 显示当前配置
-- `/history` - 显示会话历史
-
-## 配置
-
-应用程序会在用户主目录下创建配置文件：`~/.ai-cli-chat/config.json`
-
-### 默认配置
-
-```json
-{
-  "ollama": {
-    "endpoint": "http://localhost:11434",
-    "model": "llama3.2:1b",
-    "timeout": 30000,
-    "maxTokens": 2048,
-    "temperature": 0.7
-  },
-  "codeGeneration": {
-    "defaultLanguage": "typescript",
-    "defaultFramework": "node",
-    "includeComments": true,
-    "includeTests": false,
-    "outputDirectory": "./generated"
-  },
-  "codeReview": {
-    "enabledRules": ["security", "performance", "style", "maintainability"],
-    "severity": ["error", "warning", "info"],
-    "autoFix": false,
-    "reportFormat": "markdown"
-  },
-  "execution": {
-    "timeout": 10000,
-    "sandboxEnabled": true,
-    "allowNetworkAccess": false,
-    "allowFileSystemAccess": false
-  },
-  "ui": {
-    "theme": "auto",
-    "showProgress": true,
-    "verboseOutput": false
-  },
-  "security": {
-    "enableSandbox": true,
-    "allowedModules": ["fs", "path", "util", "crypto"],
-    "restrictedPaths": ["/etc", "/usr", "/bin", "/sbin"],
-    "maxExecutionTime": 10000
-  }
-}
-```
-
-### 修改配置
-
-```bash
-# 设置配置值
-link config --set ollama.model=llama3.2:3b
-link config --set codeGeneration.defaultLanguage=python
-
-# 获取配置值
-link config --get ollama.model
-
-# 重置配置
-link config --reset
-```
-
-## 使用示例
-
-### 代码生成
-
-```
-💬 You: 生成一个 TypeScript 函数来计算斐波那契数列
-
-🤖 AI: 我来为你生成一个计算斐波那契数列的 TypeScript 函数：
-
-```typescript
-/**
- * 计算斐波那契数列的第 n 项
- * @param n 要计算的项数（从 0 开始）
- * @returns 斐波那契数列的第 n 项
- */
-function fibonacci(n: number): number {
-  // 【AI 李大庆】: 处理边界情况
-  if (n < 0) {
-    throw new Error('输入必须是非负整数');
-  }
-  
-  if (n <= 1) {
-    return n;
-  }
-  
-  // 【AI 李大庆】: 使用动态规划优化性能
-  let prev = 0;
-  let curr = 1;
-  
-  for (let i = 2; i <= n; i++) {
-    const next = prev + curr;
-    prev = curr;
-    curr = next;
-  }
-  
-  return curr;
-}
-
-// 使用示例
-console.log(fibonacci(10)); // 输出: 55
-```
-```
-
-### 代码审查
-
-```
-💬 You: 请审查这段代码的安全性：
-function getUserData(userId) {
-  const query = "SELECT * FROM users WHERE id = " + userId;
-  return database.query(query);
-}
-
-🤖 AI: 我发现了这段代码中的一个严重安全问题：
-
-**安全漏洞：SQL 注入**
-- 问题：直接将用户输入拼接到 SQL 查询中
-- 风险：攻击者可以注入恶意 SQL 代码
-- 建议：使用参数化查询
-
-**修复后的安全代码：**
-```javascript
-function getUserData(userId) {
-  // 【AI 李大庆】: 使用参数化查询防止 SQL 注入
-  const query = "SELECT * FROM users WHERE id = ?";
-  return database.query(query, [userId]);
-}
-```
-```
-
-## 开发
-
-### 项目结构
-
-```
-src/
-├── app/                 # 应用程序主类
-├── core/               # 核心功能模块
-├── providers/          # AI 提供商接口
-├── services/           # 业务服务
-├── types/              # TypeScript 类型定义
-├── utils/              # 工具函数
-└── index.ts            # 应用程序入口
-```
-
-### 开发命令
-
-```bash
-npm run dev             # 开发模式运行
-npm run build           # 构建项目
-npm run test            # 运行测试
-npm run lint            # 代码检查
-npm run format          # 代码格式化
-```
-
-## 故障排除
-
-### Ollama 连接问题
-
-1. 确保 Ollama 服务正在运行：
+1. **Check if the package is installed globally:**
    ```bash
-   ollama serve
+   npm list -g linchat
    ```
 
-2. 检查 Ollama 是否可访问：
+2. **Check npm global bin directory:**
    ```bash
-   curl http://localhost:11434/api/tags
+   npm config get prefix
    ```
 
-3. 拉取所需的模型：
+3. **Make sure the npm global bin directory is in your PATH:**
    ```bash
-   ollama pull llama3.2:1b
+   echo $PATH
    ```
 
-### 权限问题
+4. **If needed, add npm global bin to your PATH:**
+   ```bash
+   # For bash/zsh users, add to ~/.bashrc or ~/.zshrc:
+   export PATH="$(npm config get prefix)/bin:$PATH"
+   ```
 
-如果遇到权限问题，确保有足够的权限访问配置目录：
+5. **Restart your terminal or reload your shell configuration:**
+   ```bash
+   source ~/.bashrc  # or ~/.zshrc
+   ```
+
+6. **Alternative: Use the full command name:**
+   ```bash
+   linchat
+   ```
+
+## 📋 Commands
+
+### Main Commands
+- `l` - Start interactive chat (default)
+- `l config` - Manage configuration
+- `l models` - Manage Ollama models  
+- `l history` - Manage chat history
+- `l --help` - Show help information
+
+### Chat Commands (within the chat interface)
+- `/help` - Show available commands
+- `/read <file>` - Read file content
+- `/write <file> <content>` - Write content to file
+- `/edit <file>` - Edit file
+- `/delete <file>` - Delete file (with backup)
+- `/doc read <file>` - Read structured document
+- `/search <file> <query>` - Search in document
+- `/convert <src> <dst> <format>` - Convert document format
+- `/sessions` - List chat sessions
+- `/load <session>` - Load specific session
+- `/clear` - Clear current session
+- `/exit` - Exit application
+
+## 🎨 Usage Examples
+
+### Code Review
 ```bash
-chmod 755 ~/.ai-cli-chat
+# Start chat and then:
+cr example.js
+# System will offer multiple review options:
+# 1. Deep code review + suggestions
+# 2. Code review + refactoring
+# 3. Security review
+# 4. Performance optimization
 ```
 
-## 贡献
+### File Modification
+```bash
+# Modify existing files:
+修改 example.js
+# Choose from options:
+# 1. Improve existing code
+# 2. Fix issues
+# 3. Add new features
+# 4. Modernize code
+```
 
-欢迎提交 Issue 和 Pull Request！
+### Document Processing
+```bash
+# Read documents:
+/doc read README.md
 
-## 许可证
+# Search in documents:
+/search config.json "database"
 
-MIT License
+# Convert formats:
+/convert data.json data.yaml yaml
+```
+
+### Code Creation
+```bash
+# Create new code:
+创建一个React组件
+# Options available:
+# 1. Create from scratch
+# 2. Use template
+# 3. Create example
+# 4. Based on existing file
+```
+
+## 🔧 Configuration
+
+### View Configuration
+```bash
+l config --list
+```
+
+### Set Configuration
+```bash
+l config --set model=llama2
+l config --set temperature=0.7
+```
+
+### Reset Configuration
+```bash
+l config --reset
+```
+
+## 🤖 Model Management
+
+### List Available Models
+```bash
+l models --list
+```
+
+### Pull New Model
+```bash
+l models --pull codellama
+```
+
+### Remove Model
+```bash
+l models --remove oldmodel
+```
+
+## 📚 Session Management
+
+### List Sessions
+```bash
+l history --list
+```
+
+### Show Specific Session
+```bash
+l history --show session-id
+```
+
+### Export Session
+```bash
+l history --export session-id
+```
+
+### Clear All History
+```bash
+l history --clear
+```
+
+## 🎯 Smart Features
+
+### Intent Analysis
+The system intelligently analyzes your requests and provides specific options:
+- **Code Review**: Multiple review approaches (security, performance, refactoring)
+- **Modification**: Different improvement strategies
+- **Creation**: Various creation methods
+- **Help**: Targeted assistance options
+
+### Auto-Save
+- Automatically detects when to save AI responses
+- Extracts code blocks and saves to appropriate files
+- Supports multiple programming languages
+- Creates timestamped backups
+
+### Document Context
+- Automatically reads relevant files when mentioned
+- Provides file content as context to AI
+- Supports intelligent file path detection
+- Enhances AI responses with current file state
+
+## 🛠️ Supported File Formats
+
+- **Code**: JavaScript, TypeScript, Python, Java, C/C++, HTML, CSS
+- **Documents**: Markdown, JSON, YAML, TXT
+- **Configuration**: Various config file formats
+
+## 🔒 Safety Features
+
+- **Automatic Backups**: Files are backed up before modifications
+- **User Confirmation**: Prompts before applying changes to existing files
+- **Error Handling**: Comprehensive error handling and recovery
+- **Validation**: Input validation and format checking
+
+## 🐛 Troubleshooting
+
+### Ollama Not Running
+```bash
+# Start Ollama service
+ollama serve
+
+# Pull a model if none available
+ollama pull llama2
+```
+
+### Permission Issues
+```bash
+# On macOS/Linux, you might need:
+sudo npm install -g linchat
+```
+
+### Node.js Version
+```bash
+# Check Node.js version
+node --version
+
+# Should be 16.0.0 or higher
+```
+
+## 📝 License
+
+MIT License - see LICENSE file for details.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit issues and pull requests.
+
+## 📞 Support
+
+For issues and questions:
+- GitHub Issues: https://github.com/link/linchat/issues
+- Documentation: https://github.com/link/linchat#readme
+
+## 🎉 Acknowledgments
+
+- Built with [Ollama](https://ollama.ai/) for AI capabilities
+- Powered by [Node.js](https://nodejs.org/) and [TypeScript](https://www.typescriptlang.org/)
+- CLI interface built with [Commander.js](https://github.com/tj/commander.js/)
+- Styling with [Chalk](https://github.com/chalk/chalk)
