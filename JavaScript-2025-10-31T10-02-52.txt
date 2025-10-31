@@ -1,0 +1,31 @@
+/**
+ * 计算斐波那契数列的第 n 项
+ * @param {number} n - 位置（0 表示 0，1 表示 1）
+ * @returns {number} 第 n 项的值
+ */
+function fibonacci(n) {
+  if (n < 0) {
+    throw new Error('n 必须是非负整数');
+  }
+
+  // 递归实现（仅用于演示，递归深度大时会导致栈溢出）
+  // function fibRecursive(k) {
+  //   if (k <= 1) return k;
+  //   return fibRecursive(k - 1) + fibRecursive(k - 2);
+  // }
+
+  // 迭代实现（推荐）
+  let a = 0, b = 1;
+  if (n === 0) return a;
+  for (let i = 2; i <= n; i++) {
+    const temp = a + b;
+    a = b;
+    b = temp;
+  }
+  return b;
+}
+
+// 示例
+console.log(fibonacci(0)); // 0
+console.log(fibonacci(1)); // 1
+console.log(fibonacci(10)); // 55

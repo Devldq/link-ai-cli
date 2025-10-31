@@ -349,18 +349,24 @@ export class ChatManager {
 5. Help with debugging and troubleshooting
 6. Read and modify documents and files
 
-When the user requests to modify, edit, update, or rewrite documents/files:
+When the user requests code review (CR), modification, or improvement of existing files:
 - The system will automatically provide the current content of relevant files in the message context
 - You should base your modifications on the provided file content
-- You cannot directly read or write files - you can only suggest changes based on the provided context
-- When suggesting file modifications, provide clear, specific instructions or complete updated content
-- Always acknowledge the current content when making suggestions
+- Analyze the code thoroughly and provide specific improvement suggestions
+- When providing modified code, include the complete updated file content in a code block
+- Use clear indicators like "修改后的代码:" or "Updated code:" before code blocks
+- Explain what changes were made and why they improve the code
 
-When generating code or content that should be saved to files:
+When generating new code or content that should be saved to files:
 - Use proper code blocks with language specification
 - The system will automatically detect and save code blocks to appropriate files
 - If the user specifies a filename, the content will be saved to that file
 - Multiple code blocks will be saved as separate files with appropriate extensions
+
+For code modifications:
+- The system will ask for user confirmation before applying changes to existing files
+- Backup files are automatically created before modifications
+- A modification summary will be shown after successful changes
 
 Be helpful, concise, and provide practical solutions. When generating code, include comments and follow best practices.`;
   }
@@ -949,16 +955,19 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
   // 处理AI响应保存
   private async handleAIResponseSaving(userInput: string, aiResponse: string): Promise<void> {
     try {
+      // 检测是否是代码审查或修改请求
+      const isCodeReviewOrModification = this.isCodeReviewOrModificationRequest(userInput);
+      
       // 检测是否需要保存到文件
       const saveKeywords = [
-        '保存', '写入', '创建', '生成', '输出',
-        'save', 'write', 'create', 'generate', 'output',
+        '保存', '写入', '创建', '生成', '输出', '修改', '更新', '改写',
+        'save', 'write', 'create', 'generate', 'output', 'modify', 'update', 'rewrite',
         '文件', '文档', 'file', 'document'
       ];
 
       const needsSaving = saveKeywords.some(keyword => 
         userInput.toLowerCase().includes(keyword.toLowerCase())
-      );
+      ) || isCodeReviewOrModification;
 
       if (!needsSaving) {
         return;
@@ -966,6 +975,12 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
 
       // 提取文件路径
       const filePaths = this.extractFilePaths(userInput);
+      
+      // 如果是代码审查或修改请求，且有文件路径，直接保存到原文件
+      if (isCodeReviewOrModification && filePaths.length > 0) {
+        await this.handleCodeModificationSaving(filePaths, aiResponse, userInput);
+        return;
+      }
       
       // 如果没有明确的文件路径，尝试从AI响应中提取代码块或内容
       if (filePaths.length === 0) {
@@ -1129,6 +1144,158 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
 
     const extensions = languageMap[language.toLowerCase()] || [];
     return extensions.includes(ext);
+  }
+
+  // 检测是否是代码审查或修改请求
+  private isCodeReviewOrModificationRequest(userInput: string): boolean {
+    const codeReviewKeywords = [
+      'cr', 'code review', '代码审查', '审查代码', '检查代码',
+      '修改', '改进', '优化', '重构', '更新', '调整',
+      'modify', 'improve', 'optimize', 'refactor', 'update', 'fix',
+      '帮我', '帮忙', 'help me', 'please help',
+      '问题', '错误', 'issue', 'error', 'bug'
+    ];
+
+    return codeReviewKeywords.some(keyword => 
+      userInput.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  // 处理代码修改保存
+  private async handleCodeModificationSaving(filePaths: string[], aiResponse: string, _userInput: string): Promise<void> {
+    try {
+      // 询问用户是否要应用修改
+      const shouldApply = await this.askUserConfirmation(filePaths, aiResponse);
+      
+      if (!shouldApply) {
+        console.log(chalk.yellow('\n📝 修改建议已显示，但未应用到文件。'));
+        console.log(chalk.gray('如需应用修改，请明确说明"应用修改"或"保存修改"。'));
+        return;
+      }
+
+      // 应用修改到文件
+      for (const filePath of filePaths) {
+        await this.applyModificationToFile(filePath, aiResponse);
+      }
+
+    } catch (error) {
+      this.logger.error('处理代码修改保存时出错:', error);
+    }
+  }
+
+  // 询问用户确认
+  private async askUserConfirmation(filePaths: string[], aiResponse: string): Promise<boolean> {
+    // 检查AI响应中是否包含完整的文件内容或明确的修改指令
+    const hasCompleteCode = this.hasCompleteFileContent(aiResponse);
+    const hasModificationInstructions = this.hasModificationInstructions(aiResponse);
+
+    if (!hasCompleteCode && !hasModificationInstructions) {
+      return false;
+    }
+
+    console.log(chalk.cyan('\n🤔 检测到代码修改建议，是否要应用到文件？'));
+    console.log(chalk.gray(`文件: ${filePaths.join(', ')}`));
+    console.log(chalk.yellow('输入 "yes" 或 "应用" 来应用修改，其他任何输入将跳过保存。'));
+    
+    return new Promise((resolve) => {
+      this.rl?.question(chalk.blue('是否应用修改? '), (answer) => {
+        const confirmKeywords = ['yes', 'y', '是', '应用', '确认', 'apply', 'confirm'];
+        const shouldApply = confirmKeywords.some(keyword => 
+          answer.toLowerCase().trim().includes(keyword.toLowerCase())
+        );
+        resolve(shouldApply);
+      });
+    });
+  }
+
+  // 检查是否包含完整的文件内容
+  private hasCompleteFileContent(aiResponse: string): boolean {
+    // 检查是否有代码块
+    const codeBlocks = this.extractCodeBlocks(aiResponse);
+    if (codeBlocks.length === 0) {
+      return false;
+    }
+
+    // 检查代码块是否足够长（可能是完整文件）
+    return codeBlocks.some(block => block.content.split('\n').length > 10);
+  }
+
+  // 检查是否包含修改指令
+  private hasModificationInstructions(aiResponse: string): boolean {
+    const modificationIndicators = [
+      '修改后的代码', '更新后的代码', '改进后的代码',
+      'modified code', 'updated code', 'improved code',
+      '完整代码', 'complete code', 'full code',
+      '替换为', 'replace with', '改为', 'change to'
+    ];
+
+    return modificationIndicators.some(indicator => 
+      aiResponse.toLowerCase().includes(indicator.toLowerCase())
+    );
+  }
+
+  // 应用修改到文件
+  private async applyModificationToFile(filePath: string, aiResponse: string): Promise<void> {
+    try {
+      // 提取代码块
+      const codeBlocks = this.extractCodeBlocks(aiResponse);
+      
+      if (codeBlocks.length === 0) {
+        console.log(chalk.yellow(`⚠️  未在响应中找到代码块，跳过文件 ${filePath}`));
+        return;
+      }
+
+      // 选择最合适的代码块
+      const targetBlock = codeBlocks.find(block => 
+        this.isLanguageMatch(block.language, filePath)
+      ) || codeBlocks[0];
+
+      if (!targetBlock) {
+        console.log(chalk.yellow(`⚠️  未找到合适的代码块，跳过文件 ${filePath}`));
+        return;
+      }
+
+      // 保存到文件
+      const result = await this.fileEditService.writeFile(filePath, targetBlock.content, {
+        backup: true
+      });
+
+      if (result.success) {
+        console.log(chalk.green(`\n✅ 修改已应用到: ${filePath}`));
+        if (result.backupPath) {
+          console.log(chalk.gray(`📦 备份文件: ${result.backupPath}`));
+        }
+        
+        // 显示修改摘要
+        this.showModificationSummary(filePath, result.originalContent || '', targetBlock.content);
+      } else {
+        console.log(chalk.red(`❌ 应用修改失败: ${result.error}`));
+      }
+
+    } catch (error) {
+      this.logger.error(`应用修改到文件 ${filePath} 时出错:`, error);
+      console.log(chalk.red(`❌ 应用修改时出错: ${error instanceof Error ? error.message : String(error)}`));
+    }
+  }
+
+  // 显示修改摘要
+  private showModificationSummary(filePath: string, originalContent: string, newContent: string): void {
+    const originalLines = originalContent.split('\n').length;
+    const newLines = newContent.split('\n').length;
+    const lineDiff = newLines - originalLines;
+
+    console.log(chalk.cyan('\n📊 修改摘要:'));
+    console.log(chalk.gray(`文件: ${filePath}`));
+    console.log(chalk.gray(`原始行数: ${originalLines}`));
+    console.log(chalk.gray(`修改后行数: ${newLines}`));
+    
+    if (lineDiff > 0) {
+      console.log(chalk.green(`增加了 ${lineDiff} 行`));
+    } else if (lineDiff < 0) {
+      console.log(chalk.red(`减少了 ${Math.abs(lineDiff)} 行`));
+    } else {
+      console.log(chalk.blue('行数未变化'));
+    }
   }
 
   // 清理资源

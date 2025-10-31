@@ -51,6 +51,13 @@ export declare class ChatManager {
     private extractCodeBlocks;
     private generateFileName;
     private isLanguageMatch;
+    private isCodeReviewOrModificationRequest;
+    private handleCodeModificationSaving;
+    private askUserConfirmation;
+    private hasCompleteFileContent;
+    private hasModificationInstructions;
+    private applyModificationToFile;
+    private showModificationSummary;
     cleanup(): Promise<void>;
 }
 //# sourceMappingURL=ChatManager.d.ts.map

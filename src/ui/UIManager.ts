@@ -43,8 +43,8 @@ export class UIManager {
     console.log(chalk.cyan('Tips to getting started:'));
     console.log(chalk.gray('1. Input a message to chat with AI'));
     console.log(chalk.gray('2. /help for more commands'));
-    console.log(chalk.gray('3. /doc read <file> to read documents'));
-    console.log(chalk.gray('4. /search <file> <query> to search in documents'));
+    console.log(chalk.gray('3. Say "cr filename.js" to review and improve code'));
+    console.log(chalk.gray('4. Use "修改 filename.js" to modify existing files'));
     console.log(chalk.gray('5. Ctrl+C to exit'));
     console.log();
   }
@@ -132,6 +132,11 @@ export class UIManager {
     console.log(chalk.gray('  - AI responses with code blocks are automatically saved'));
     console.log(chalk.gray('  - Use keywords like "保存", "创建", "生成" to trigger auto-save'));
     console.log(chalk.gray('  - Specify filenames in your request for targeted saving'));
+    console.log(chalk.cyan('\n🔍 Code Review & Modification:'));
+    console.log(chalk.gray('  - Use "cr", "代码审查", "修改" to review and improve code'));
+    console.log(chalk.gray('  - System will read existing files and provide context'));
+    console.log(chalk.gray('  - Modifications require user confirmation before applying'));
+    console.log(chalk.gray('  - Automatic backup creation before file changes'));
     console.log(chalk.cyan('\n💡 Tips:'));
     console.log(chalk.gray('  - Ask me to generate code, review code, or execute tasks'));
     console.log(chalk.gray('  - I can work with multiple programming languages'));
