@@ -58,6 +58,17 @@ export declare class ChatManager {
     private hasModificationInstructions;
     private applyModificationToFile;
     private showModificationSummary;
+    private analyzeUserIntent;
+    private generateCodeReviewOptions;
+    private generateModificationOptions;
+    private generateCreationOptions;
+    private generateHelpOptions;
+    private presentOptionsToUser;
+    private executeSelectedOption;
+    private buildEnhancedPrompt;
+    private executeAIConversation;
+    private handleDirectConversation;
+    private getEnhancedSystemPrompt;
     cleanup(): Promise<void>;
 }
 //# sourceMappingURL=ChatManager.d.ts.map

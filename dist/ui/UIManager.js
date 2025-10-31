@@ -39,8 +39,8 @@ class UIManager {
         console.log(chalk_1.default.cyan('Tips to getting started:'));
         console.log(chalk_1.default.gray('1. Input a message to chat with AI'));
         console.log(chalk_1.default.gray('2. /help for more commands'));
-        console.log(chalk_1.default.gray('3. Say "cr filename.js" to review and improve code'));
-        console.log(chalk_1.default.gray('4. Use "修改 filename.js" to modify existing files'));
+        console.log(chalk_1.default.gray('3. Say "cr filename.js" and choose from multiple review options'));
+        console.log(chalk_1.default.gray('4. Use "帮我修改 filename.js" for guided modification options'));
         console.log(chalk_1.default.gray('5. Ctrl+C to exit'));
         console.log();
     }
@@ -119,8 +119,13 @@ class UIManager {
         console.log(chalk_1.default.cyan('\n🔍 Code Review & Modification:'));
         console.log(chalk_1.default.gray('  - Use "cr", "代码审查", "修改" to review and improve code'));
         console.log(chalk_1.default.gray('  - System will read existing files and provide context'));
-        console.log(chalk_1.default.gray('  - Modifications require user confirmation before applying'));
+        console.log(chalk_1.default.gray('  - Intelligent intent analysis with multiple options'));
+        console.log(chalk_1.default.gray('  - User confirmation required before applying changes'));
         console.log(chalk_1.default.gray('  - Automatic backup creation before file changes'));
+        console.log(chalk_1.default.cyan('\n🎯 Smart Intent Analysis:'));
+        console.log(chalk_1.default.gray('  - System analyzes your request and offers specific options'));
+        console.log(chalk_1.default.gray('  - Choose from detailed code review, refactoring, or optimization'));
+        console.log(chalk_1.default.gray('  - Tailored responses based on your selected approach'));
         console.log(chalk_1.default.cyan('\n💡 Tips:'));
         console.log(chalk_1.default.gray('  - Ask me to generate code, review code, or execute tasks'));
         console.log(chalk_1.default.gray('  - I can work with multiple programming languages'));

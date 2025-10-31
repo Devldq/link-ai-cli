@@ -119,47 +119,22 @@ class ChatManager {
         try {
             // 设置等待响应状态
             this.isWaitingForResponse = true;
-            // 检查是否需要文档上下文并增强消息
-            const enhancedInput = await this.enhanceMessageWithDocumentContext(input);
-            // 添加用户消息到会话
-            const userMessage = {
-                id: (0, uuid_1.v4)(),
-                role: 'user',
-                content: enhancedInput,
-                timestamp: new Date()
-            };
-            this.currentSession.messages.push(userMessage);
-            this.updateSessionMetadata();
-            // 显示用户消息（显示原始输入）
-            this.uiManager.displayUserMessage(input);
-            // 显示AI响应开始
-            this.uiManager.displayAIMessageStart();
-            // 获取AI响应
-            let assistantResponse = '';
-            const chatStream = this.ollamaProvider.chat(this.currentSession.messages, {
-                systemPrompt: this.getSystemPrompt()
-            });
-            for await (const chunk of chatStream) {
-                if (chunk.message && chunk.message.content) {
-                    this.uiManager.displayAIMessageChunk(chunk.message.content);
-                    assistantResponse += chunk.message.content;
+            // 首先分析用户意图并提供方案选择
+            const intentAnalysis = await this.analyzeUserIntent(input);
+            if (intentAnalysis.needsOptions) {
+                // 显示方案选择
+                const selectedOption = await this.presentOptionsToUser(intentAnalysis);
+                if (!selectedOption) {
+                    console.log(chalk_1.default.yellow('\n❌ 操作已取消'));
+                    return;
                 }
+                // 根据选择的方案执行操作
+                await this.executeSelectedOption(selectedOption, input);
             }
-            // 显示AI响应结束
-            this.uiManager.displayAIMessageEnd();
-            // 添加AI响应到会话
-            const assistantMessage = {
-                id: (0, uuid_1.v4)(),
-                role: 'assistant',
-                content: assistantResponse,
-                timestamp: new Date()
-            };
-            this.currentSession.messages.push(assistantMessage);
-            this.updateSessionMetadata();
-            // 检查是否需要保存AI响应到文件
-            await this.handleAIResponseSaving(input, assistantResponse);
-            // 自动保存会话
-            await this.saveCurrentSession();
+            else {
+                // 直接处理普通对话
+                await this.handleDirectConversation(input);
+            }
         }
         catch (error) {
             this.logger.error('Error processing user input:', error);
@@ -1142,6 +1117,373 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
         else {
             console.log(chalk_1.default.blue('行数未变化'));
         }
+    }
+    // 分析用户意图
+    async analyzeUserIntent(input) {
+        try {
+            // 检测复杂操作关键词
+            const complexOperationKeywords = [
+                'cr', 'code review', '代码审查', '审查代码', '检查代码',
+                '修改', '改进', '优化', '重构', '更新', '调整',
+                'modify', 'improve', 'optimize', 'refactor', 'update', 'fix',
+                '帮我', '帮忙', 'help me', 'please help',
+                '创建', '生成', '写', '开发', 'create', 'generate', 'write', 'develop'
+            ];
+            const hasComplexOperation = complexOperationKeywords.some(keyword => input.toLowerCase().includes(keyword.toLowerCase()));
+            if (!hasComplexOperation) {
+                return { needsOptions: false, intent: 'conversation' };
+            }
+            // 提取文件路径
+            const filePaths = this.extractFilePaths(input);
+            // 分析具体意图
+            if (input.toLowerCase().includes('cr') || input.toLowerCase().includes('代码审查') || input.toLowerCase().includes('code review')) {
+                return this.generateCodeReviewOptions(input, filePaths);
+            }
+            if (input.toLowerCase().includes('修改') || input.toLowerCase().includes('改进') || input.toLowerCase().includes('modify') || input.toLowerCase().includes('improve')) {
+                return this.generateModificationOptions(input, filePaths);
+            }
+            if (input.toLowerCase().includes('创建') || input.toLowerCase().includes('生成') || input.toLowerCase().includes('create') || input.toLowerCase().includes('generate')) {
+                return this.generateCreationOptions(input, filePaths);
+            }
+            if (input.toLowerCase().includes('帮我') || input.toLowerCase().includes('帮忙') || input.toLowerCase().includes('help me')) {
+                return this.generateHelpOptions(input, filePaths);
+            }
+            return { needsOptions: false, intent: 'conversation' };
+        }
+        catch (error) {
+            this.logger.error('分析用户意图时出错:', error);
+            return { needsOptions: false, intent: 'conversation' };
+        }
+    }
+    // 生成代码审查选项
+    generateCodeReviewOptions(input, filePaths) {
+        const options = [];
+        if (filePaths.length > 0) {
+            options.push({
+                id: 'review_with_suggestions',
+                title: '深度代码审查 + 改进建议',
+                description: '分析代码质量、性能、安全性，并提供具体改进建议',
+                action: 'code_review_detailed'
+            });
+            options.push({
+                id: 'review_withctor',
+                title: '代码审查 + 重构方案',
+                description: '审查代码并提供重构后的完整代码',
+                action: 'code_review_refactor'
+            });
+            options.push({
+                id: 'review_security',
+                title: '安全性审查',
+                description: '专注于安全漏洞和潜在风险分析',
+                action: 'security_review'
+            });
+            options.push({
+                id: 'review_performance',
+                title: '性能优化审查',
+                description: '分析性能瓶颈并提供优化建议',
+                action: 'performance_review'
+            });
+        }
+        else {
+            options.push({
+                id: 'general_review',
+                title: '通用代码审查指导',
+                description: '提供代码审查的一般性建议和最佳实践',
+                action: 'general_guidance'
+            });
+        }
+        return {
+            needsOptions: true,
+            intent: 'code_review',
+            options,
+            context: { filePaths, originalInput: input }
+        };
+    }
+    // 生成修改选项
+    generateModificationOptions(input, filePaths) {
+        const options = [];
+        if (filePaths.length > 0) {
+            options.push({
+                id: 'modify_improve',
+                title: '改进现有代码',
+                description: '基于最佳实践改进代码质量和可读性',
+                action: 'improve_code'
+            });
+            options.push({
+                id: 'modify_fix',
+                title: '修复问题',
+                description: '识别并修复代码中的bug和问题',
+                action: 'fix_issues'
+            });
+            options.push({
+                id: 'modify_feature',
+                title: '添加新功能',
+                description: '在现有代码基础上添加新的功能',
+                action: 'add_features'
+            });
+            options.push({
+                id: 'modify_modernize',
+                title: '现代化代码',
+                description: '使用最新语法和模式更新代码',
+                action: 'modernize_code'
+            });
+        }
+        else {
+            options.push({
+                id: 'modify_guidance',
+                title: '代码修改指导',
+                description: '提供代码修改的一般性建议',
+                action: 'modification_guidance'
+            });
+        }
+        return {
+            needsOptions: true,
+            intent: 'modification',
+            options,
+            context: { filePaths, originalInput: input }
+        };
+    }
+    // 生成创建选项
+    generateCreationOptions(input, filePaths) {
+        const options = [
+            {
+                id: 'create_from_scratch',
+                title: '从零开始创建',
+                description: '根据需求创建全新的代码文件',
+                action: 'create_new'
+            },
+            {
+                id: 'create_template',
+                title: '基于模板创建',
+                description: '使用常见模板快速创建代码结构',
+                action: 'create_template'
+            },
+            {
+                id: 'create_example',
+                title: '创建示例代码',
+                description: '生成演示特定功能的示例代码',
+                action: 'create_example'
+            }
+        ];
+        if (filePaths.length > 0) {
+            options.unshift({
+                id: 'create_based_on',
+                title: '基于现有文件创建',
+                description: '参考现有文件的结构和模式创建新代码',
+                action: 'create_based_on_existing'
+            });
+        }
+        return {
+            needsOptions: true,
+            intent: 'creation',
+            options,
+            context: { filePaths, originalInput: input }
+        };
+    }
+    // 生成帮助选项
+    generateHelpOptions(input, filePaths) {
+        const options = [
+            {
+                id: 'help_explain',
+                title: '解释代码',
+                description: '详细解释代码的功能和工作原理',
+                action: 'explain_code'
+            },
+            {
+                id: 'help_debug',
+                title: '调试帮助',
+                description: '帮助找出和解决代码问题',
+                action: 'debug_help'
+            },
+            {
+                id: 'help_optimize',
+                title: '优化建议',
+                description: '提供性能和代码质量优化建议',
+                action: 'optimization_help'
+            },
+            {
+                id: 'help_learn',
+                title: '学习指导',
+                description: '提供学习相关技术的建议和资源',
+                action: 'learning_guidance'
+            }
+        ];
+        return {
+            needsOptions: true,
+            intent: 'help',
+            options,
+            context: { filePaths, originalInput: input }
+        };
+    }
+    // 向用户展示选项
+    async presentOptionsToUser(intentAnalysis) {
+        console.log(chalk_1.default.cyan('\n🤔 我理解您的需求，请选择具体的操作方案：\n'));
+        intentAnalysis.options.forEach((option, index) => {
+            console.log(chalk_1.default.yellow(`${index + 1}. ${option.title}`));
+            console.log(chalk_1.default.gray(`   ${option.description}\n`));
+        });
+        console.log(chalk_1.default.gray('0. 取消操作\n'));
+        return new Promise((resolve) => {
+            this.rl?.question(chalk_1.default.blue('请选择方案 (输入数字): '), (answer) => {
+                const choice = parseInt(answer.trim());
+                if (choice === 0) {
+                    resolve(null);
+                    return;
+                }
+                if (choice >= 1 && choice <= intentAnalysis.options.length) {
+                    const selectedOption = intentAnalysis.options[choice - 1];
+                    resolve({
+                        ...selectedOption,
+                        context: intentAnalysis.context
+                    });
+                }
+                else {
+                    console.log(chalk_1.default.red('❌ 无效选择，操作已取消'));
+                    resolve(null);
+                }
+            });
+        });
+    }
+    // 执行选择的方案
+    async executeSelectedOption(selectedOption, originalInput) {
+        console.log(chalk_1.default.green(`\n✅ 已选择: ${selectedOption.title}`));
+        console.log(chalk_1.default.gray(`正在执行: ${selectedOption.description}\n`));
+        // 根据选择的操作构建增强的提示
+        const enhancedPrompt = await this.buildEnhancedPrompt(selectedOption, originalInput);
+        // 执行AI对话
+        await this.executeAIConversation(enhancedPrompt, originalInput, selectedOption);
+    }
+    // 构建增强的提示
+    async buildEnhancedPrompt(selectedOption, originalInput) {
+        let enhancedPrompt = `用户请求: ${originalInput}\n\n`;
+        enhancedPrompt += `选择的操作: ${selectedOption.title}\n`;
+        enhancedPrompt += `操作描述: ${selectedOption.description}\n\n`;
+        // 添加文档上下文
+        if (selectedOption.context?.filePaths?.length > 0) {
+            enhancedPrompt = await this.enhanceMessageWithDocumentContext(enhancedPrompt);
+        }
+        // 根据操作类型添加特定指令
+        switch (selectedOption.action) {
+            case 'code_review_detailed':
+                enhancedPrompt += '\n请进行详细的代码审查，包括：\n1. 代码质量分析\n2. 性能问题识别\n3. 安全性检查\n4. 最佳实践建议\n5. 具体改进方案\n';
+                break;
+            case 'code_review_refactor':
+                enhancedPrompt += '\n请提供代码审查和重构方案：\n1. 分析现有代码问题\n2. 提供重构后的完整代码\n3. 解释重构的原因和好处\n';
+                break;
+            case 'improve_code':
+                enhancedPrompt += '\n请改进代码：\n1. 提高代码可读性\n2. 优化代码结构\n3. 应用最佳实践\n4. 提供完整的改进后代码\n';
+                break;
+            case 'fix_issues':
+                enhancedPrompt += '\n请识别并修复代码问题：\n1. 找出潜在的bug\n2. 修复逻辑错误\n3. 改善错误处理\n4. 提供修复后的代码\n';
+                break;
+            case 'create_new':
+                enhancedPrompt += '\n请创建新的代码：\n1. 根据需求设计代码结构\n2. 实现核心功能\n3. 添加适当的注释\n4. 遵循最佳实践\n';
+                break;
+        }
+        return enhancedPrompt;
+    }
+    // 执行AI对话
+    async executeAIConversation(enhancedPrompt, originalInput, selectedOption) {
+        // 添加用户消息到会话
+        const userMessage = {
+            id: (0, uuid_1.v4)(),
+            role: 'user',
+            content: enhancedPrompt,
+            timestamp: new Date()
+        };
+        this.currentSession.messages.push(userMessage);
+        this.updateSessionMetadata();
+        // 显示用户消息（显示原始输入）
+        this.uiManager.displayUserMessage(originalInput);
+        // 显示AI响应开始
+        this.uiManager.displayAIMessageStart();
+        // 获取AI响应
+        let assistantResponse = '';
+        const chatStream = this.ollamaProvider.chat(this.currentSession.messages, {
+            systemPrompt: this.getEnhancedSystemPrompt(selectedOption)
+        });
+        for await (const chunk of chatStream) {
+            if (chunk.message && chunk.message.content) {
+                this.uiManager.displayAIMessageChunk(chunk.message.content);
+                assistantResponse += chunk.message.content;
+            }
+        }
+        // 显示AI响应结束
+        this.uiManager.displayAIMessageEnd();
+        // 添加AI响应到会话
+        const assistantMessage = {
+            id: (0, uuid_1.v4)(),
+            role: 'assistant',
+            content: assistantResponse,
+            timestamp: new Date()
+        };
+        this.currentSession.messages.push(assistantMessage);
+        this.updateSessionMetadata();
+        // 检查是否需要保存AI响应到文件
+        await this.handleAIResponseSaving(originalInput, assistantResponse);
+        // 自动保存会话
+        await this.saveCurrentSession();
+    }
+    // 处理直接对话
+    async handleDirectConversation(input) {
+        // 检查是否需要文档上下文并增强消息
+        const enhancedInput = await this.enhanceMessageWithDocumentContext(input);
+        // 添加用户消息到会话
+        const userMessage = {
+            id: (0, uuid_1.v4)(),
+            role: 'user',
+            content: enhancedInput,
+            timestamp: new Date()
+        };
+        this.currentSession.messages.push(userMessage);
+        this.updateSessionMetadata();
+        // 显示用户消息（显示原始输入）
+        this.uiManager.displayUserMessage(input);
+        // 显示AI响应开始
+        this.uiManager.displayAIMessageStart();
+        // 获取AI响应
+        let assistantResponse = '';
+        const chatStream = this.ollamaProvider.chat(this.currentSession.messages, {
+            systemPrompt: this.getSystemPrompt()
+        });
+        for await (const chunk of chatStream) {
+            if (chunk.message && chunk.message.content) {
+                this.uiManager.displayAIMessageChunk(chunk.message.content);
+                assistantResponse += chunk.message.content;
+            }
+        }
+        // 显示AI响应结束
+        this.uiManager.displayAIMessageEnd();
+        // 添加AI响应到会话
+        const assistantMessage = {
+            id: (0, uuid_1.v4)(),
+            role: 'assistant',
+            content: assistantResponse,
+            timestamp: new Date()
+        };
+        this.currentSession.messages.push(assistantMessage);
+        this.updateSessionMetadata();
+        // 检查是否需要保存AI响应到文件
+        await this.handleAIResponseSaving(input, assistantResponse);
+        // 自动保存会话
+        await this.saveCurrentSession();
+    }
+    // 获取增强的系统提示
+    getEnhancedSystemPrompt(selectedOption) {
+        let basePrompt = this.getSystemPrompt();
+        // 根据选择的操作添加特定指导
+        switch (selectedOption.action) {
+            case 'code_review_detailed':
+                basePrompt += '\n\n特别注意：进行详细的代码审查时，请：\n- 分析代码的可读性、可维护性和性能\n- 识别潜在的安全问题\n- 提供具体的改进建议\n- 解释每个建议的原因';
+                break;
+            case 'code_review_refactor':
+                basePrompt += '\n\n特别注意：提供重构方案时，请：\n- 保持原有功能不变\n- 改善代码结构和设计\n- 提供完整的重构后代码\n- 使用明确的标识如"重构后的代码:"';
+                break;
+            case 'improve_code':
+                basePrompt += '\n\n特别注意：改进代码时，请：\n- 保持功能完整性\n- 提高代码质量和可读性\n- 应用最佳实践\n- 提供完整的改进后代码';
+                break;
+        }
+        return basePrompt;
     }
     // 清理资源
     async cleanup() {
