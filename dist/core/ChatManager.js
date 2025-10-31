@@ -13,6 +13,7 @@ const path_1 = __importDefault(require("path"));
 const os_1 = __importDefault(require("os"));
 const UIManager_1 = require("../ui/UIManager");
 const FileEditService_1 = require("../services/FileEditService");
+const DocumentService_1 = require("../services/DocumentService");
 class ChatManager {
     constructor(ollamaProvider, configManager, logger) {
         this.currentSession = null;
@@ -26,6 +27,8 @@ class ChatManager {
         this.uiManager = new UIManager_1.UIManager(configManager);
         // 初始化文件编辑服务
         this.fileEditService = new FileEditService_1.FileEditService(configManager, logger);
+        // 初始化文档服务
+        this.documentService = new DocumentService_1.DocumentService(configManager, logger);
         // 设置会话存储目录
         this.sessionsDir = path_1.default.join(os_1.default.homedir(), '.ai-cli-chat', 'sessions');
         this.ensureSessionsDirectory();
@@ -116,16 +119,18 @@ class ChatManager {
         try {
             // 设置等待响应状态
             this.isWaitingForResponse = true;
+            // 检查是否需要文档上下文并增强消息
+            const enhancedInput = await this.enhanceMessageWithDocumentContext(input);
             // 添加用户消息到会话
             const userMessage = {
                 id: (0, uuid_1.v4)(),
                 role: 'user',
-                content: input,
+                content: enhancedInput,
                 timestamp: new Date()
             };
             this.currentSession.messages.push(userMessage);
             this.updateSessionMetadata();
-            // 显示用户消息
+            // 显示用户消息（显示原始输入）
             this.uiManager.displayUserMessage(input);
             // 显示AI响应开始
             this.uiManager.displayAIMessageStart();
@@ -203,6 +208,15 @@ class ChatManager {
             case 'delete':
                 await this.handleFileDelete(command);
                 break;
+            case 'doc':
+                await this.handleDocumentCommand(command);
+                break;
+            case 'search':
+                await this.handleDocumentSearch(command);
+                break;
+            case 'convert':
+                await this.handleDocumentConvert(command);
+                break;
             default:
                 console.log(chalk_1.default.yellow(`❓ Unknown command: ${cmd}. Type /help for available commands.`));
         }
@@ -272,6 +286,14 @@ class ChatManager {
 3. Explain code functionality
 4. Suggest improvements and best practices
 5. Help with debugging and troubleshooting
+6. Read and modify documents and files
+
+When the user requests to modify, edit, update, or rewrite documents/files:
+- The system will automatically provide the current content of relevant files in the message context
+- You should base your modifications on the provided file content
+- You cannot directly read or write files - you can only suggest changes based on the provided context
+- When suggesting file modifications, provide clear, specific instructions or complete updated content
+- Always acknowledge the current content when making suggestions
 
 Be helpful, concise, and provide practical solutions. When generating code, include comments and follow best practices.`;
     }
@@ -523,6 +545,297 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
         catch (error) {
             this.uiManager.displayError(`Error deleting file: ${error instanceof Error ? error.message : String(error)}`);
         }
+    }
+    // 处理文档命令
+    async handleDocumentCommand(command) {
+        const parts = command.split(' ');
+        if (parts.length < 3) {
+            this.uiManager.displayError('Usage: /doc <read|write> <filepath> [content]');
+            return;
+        }
+        const action = parts[1];
+        const filePath = parts[2];
+        if (!filePath) {
+            this.uiManager.displayError('File path is required');
+            return;
+        }
+        try {
+            switch (action) {
+                case 'read':
+                    await this.handleDocumentRead(filePath);
+                    break;
+                case 'write':
+                    const content = parts.slice(3).join(' ');
+                    if (!content) {
+                        this.uiManager.displayError('Content is required for write operation');
+                        return;
+                    }
+                    await this.handleDocumentWrite(filePath, content);
+                    break;
+                default:
+                    this.uiManager.displayError('Invalid action. Use "read" or "write"');
+            }
+        }
+        catch (error) {
+            this.uiManager.displayError(`Error processing document: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    // 处理文档读取
+    async handleDocumentRead(filePath) {
+        try {
+            const result = await this.documentService.readDocument(filePath);
+            if (result.success) {
+                console.log(chalk_1.default.cyan(`\n📄 Document: ${filePath}`));
+                console.log(chalk_1.default.gray(`Format: ${result.metadata?.format}`));
+                console.log(chalk_1.default.gray(`Size: ${result.metadata?.size} bytes`));
+                console.log(chalk_1.default.gray(`Last modified: ${result.metadata?.lastModified?.toLocaleString()}`));
+                if (result.metadata?.structure) {
+                    console.log(chalk_1.default.gray(`Structure: ${JSON.stringify(result.metadata.structure, null, 2)}`));
+                }
+                console.log(chalk_1.default.gray('─'.repeat(50)));
+                // 根据格式显示内容
+                if (result.metadata?.format === 'markdown') {
+                    const mdContent = result.content;
+                    if (mdContent.frontmatter) {
+                        console.log(chalk_1.default.blue('Frontmatter:'));
+                        console.log(JSON.stringify(mdContent.frontmatter, null, 2));
+                        console.log();
+                    }
+                    console.log(chalk_1.default.white(mdContent.content));
+                    if (mdContent.headings.length > 0) {
+                        console.log(chalk_1.default.blue('\nHeadings:'));
+                        mdContent.headings.forEach((h) => {
+                            console.log(`${'  '.repeat(h.level - 1)}${h.level}. ${h.text}`);
+                        });
+                    }
+                }
+                else if (result.metadata?.format === 'json') {
+                    console.log(JSON.stringify(result.content.data, null, 2));
+                }
+                else if (result.metadata?.format === 'yaml') {
+                    console.log(JSON.stringify(result.content.data, null, 2));
+                }
+                else {
+                    console.log(result.content);
+                }
+                console.log(chalk_1.default.gray('─'.repeat(50)));
+            }
+            else {
+                this.uiManager.displayError(result.error || 'Failed to read document');
+            }
+        }
+        catch (error) {
+            this.uiManager.displayError(`Error reading document: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    // 处理文档写入
+    async handleDocumentWrite(filePath, content) {
+        try {
+            // 尝试解析内容为JSON
+            let parsedContent;
+            try {
+                parsedContent = JSON.parse(content);
+            }
+            catch {
+                parsedContent = content;
+            }
+            const result = await this.documentService.writeDocument(filePath, parsedContent);
+            if (result.success) {
+                this.uiManager.displaySuccess(result.message);
+                if (result.metadata) {
+                    console.log(chalk_1.default.gray(`Format: ${result.metadata.format}`));
+                    console.log(chalk_1.default.gray(`Size: ${result.metadata.size} bytes`));
+                }
+            }
+            else {
+                this.uiManager.displayError(result.error || 'Failed to write document');
+            }
+        }
+        catch (error) {
+            this.uiManager.displayError(`Error writing document: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    // 处理文档搜索
+    async handleDocumentSearch(command) {
+        const parts = command.split(' ');
+        if (parts.length < 3) {
+            this.uiManager.displayError('Usage: /search <filepath> <query> [--case-sensitive]');
+            return;
+        }
+        const filePath = parts[1];
+        const query = parts[2];
+        const caseSensitive = parts.includes('--case-sensitive');
+        if (!filePath || !query) {
+            this.uiManager.displayError('File path and query are required');
+            return;
+        }
+        try {
+            const result = await this.documentService.searchInDocument(filePath, query, { caseSensitive });
+            if (result.success) {
+                const matches = result.content;
+                console.log(chalk_1.default.cyan(`\n🔍 Search results for "${query}" in ${filePath}:`));
+                console.log(chalk_1.default.gray(`Found ${matches.length} matches`));
+                console.log(chalk_1.default.gray('─'.repeat(50)));
+                matches.forEach((match, index) => {
+                    console.log(chalk_1.default.yellow(`${index + 1}. Line ${match.line}:`));
+                    console.log(`   ${match.text}`);
+                    console.log();
+                });
+                console.log(chalk_1.default.gray('─'.repeat(50)));
+            }
+            else {
+                this.uiManager.displayError(result.error || 'Search failed');
+            }
+        }
+        catch (error) {
+            this.uiManager.displayError(`Error searching document: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    // 处理文档转换
+    async handleDocumentConvert(command) {
+        const parts = command.split(' ');
+        if (parts.length < 4) {
+            this.uiManager.displayError('Usage: /convert <source> <target> <format>');
+            return;
+        }
+        const sourcePath = parts[1];
+        const targetPath = parts[2];
+        const targetFormat = parts[3];
+        if (!sourcePath || !targetPath || !targetFormat) {
+            this.uiManager.displayError('Source path, target path, and format are required');
+            return;
+        }
+        try {
+            const result = await this.documentService.convertDocument(sourcePath, targetPath, targetFormat);
+            if (result.success) {
+                this.uiManager.displaySuccess(`Document converted successfully to ${targetFormat}`);
+                if (result.metadata) {
+                    console.log(chalk_1.default.gray(`Target size: ${result.metadata.size} bytes`));
+                }
+            }
+            else {
+                this.uiManager.displayError(result.error || 'Conversion failed');
+            }
+        }
+        catch (error) {
+            this.uiManager.displayError(`Error converting document: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    // 增强消息，添加文档上下文
+    async enhanceMessageWithDocumentContext(message) {
+        try {
+            // 检测消息中是否包含文档操作关键词
+            const documentKeywords = [
+                '修改', '编辑', '更新', '改写', '重写', '调整',
+                'modify', 'edit', 'update', 'rewrite', 'change',
+                '文档', '文件', 'document', 'file',
+                '内容', 'content'
+            ];
+            const hasDocumentOperation = documentKeywords.some(keyword => message.toLowerCase().includes(keyword.toLowerCase()));
+            if (!hasDocumentOperation) {
+                return message;
+            }
+            // 提取可能的文件路径
+            const filePaths = this.extractFilePaths(message);
+            if (filePaths.length === 0) {
+                return message;
+            }
+            let enhancedMessage = message + '\n\n--- 文档上下文 ---\n';
+            for (const filePath of filePaths) {
+                try {
+                    // 尝试读取文档
+                    const docResult = await this.documentService.readDocument(filePath);
+                    if (docResult.success) {
+                        enhancedMessage += `\n文件: ${filePath}\n`;
+                        enhancedMessage += `格式: ${docResult.metadata?.format}\n`;
+                        enhancedMessage += `大小: ${docResult.metadata?.size} bytes\n`;
+                        enhancedMessage += '内容:\n```\n';
+                        // 根据格式处理内容
+                        if (docResult.metadata?.format === 'markdown') {
+                            const mdContent = docResult.content;
+                            if (mdContent.frontmatter) {
+                                enhancedMessage += '---\n';
+                                enhancedMessage += JSON.stringify(mdContent.frontmatter, null, 2);
+                                enhancedMessage += '\n---\n';
+                            }
+                            enhancedMessage += mdContent.content;
+                        }
+                        else if (docResult.metadata?.format === 'json') {
+                            enhancedMessage += JSON.stringify(docResult.content.data, null, 2);
+                        }
+                        else if (docResult.metadata?.format === 'yaml') {
+                            enhancedMessage += JSON.stringify(docResult.content.data, null, 2);
+                        }
+                        else {
+                            enhancedMessage += docResult.content;
+                        }
+                        enhancedMessage += '\n```\n';
+                    }
+                    else {
+                        // 如果文档服务失败，尝试文件编辑服务
+                        try {
+                            const fileContent = await this.fileEditService.readFile(filePath);
+                            enhancedMessage += `\n文件: ${filePath}\n`;
+                            enhancedMessage += '内容:\n```\n';
+                            enhancedMessage += fileContent;
+                            enhancedMessage += '\n```\n';
+                        }
+                        catch (fileError) {
+                            this.logger.warn(`无法读取文件 ${filePath}:`, fileError);
+                        }
+                    }
+                }
+                catch (error) {
+                    this.logger.warn(`处理文件 ${filePath} 时出错:`, error);
+                }
+            }
+            enhancedMessage += '\n--- 请基于上述文档内容进行操作 ---\n';
+            this.logger.info('消息已增强文档上下文', {
+                originalLength: message.length,
+                enhancedLength: enhancedMessage.length,
+                filesIncluded: filePaths.length
+            });
+            return enhancedMessage;
+        }
+        catch (error) {
+            this.logger.error('增强消息上下文时出错:', error);
+            return message;
+        }
+    }
+    // 从消息中提取文件路径
+    extractFilePaths(message) {
+        const filePaths = [];
+        // 常见的文件路径模式
+        const patterns = [
+            // 相对路径和绝对路径
+            /(?:^|\s)([./~]?[\w\-./]+\.(?:md|json|yaml|yml|txt|js|ts|jsx|tsx|py|java|cpp|c|h|css|html|xml|config|conf))\b/gi,
+            // 引号包围的路径
+            /["']([^"']+\.(?:md|json|yaml|yml|txt|js|ts|jsx|tsx|py|java|cpp|c|h|css|html|xml|config|conf))["']/gi,
+            // 反引号包围的路径
+            /`([^`]+\.(?:md|json|yaml|yml|txt|js|ts|jsx|tsx|py|java|cpp|c|h|css|html|xml|config|conf))`/gi
+        ];
+        for (const pattern of patterns) {
+            let match;
+            while ((match = pattern.exec(message)) !== null) {
+                if (match[1]) {
+                    const filePath = match[1].trim();
+                    if (!filePaths.includes(filePath)) {
+                        filePaths.push(filePath);
+                    }
+                }
+            }
+        }
+        // 检查当前目录下的常见文件
+        const commonFiles = [
+            'README.md', 'package.json', 'tsconfig.json', 'config.json',
+            'index.js', 'index.ts', 'main.js', 'main.ts', 'app.js', 'app.ts'
+        ];
+        for (const file of commonFiles) {
+            if (message.toLowerCase().includes(file.toLowerCase()) && !filePaths.includes(file)) {
+                filePaths.push(file);
+            }
+        }
+        return filePaths;
     }
     // 清理资源
     async cleanup() {

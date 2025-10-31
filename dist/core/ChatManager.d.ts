@@ -11,6 +11,7 @@ export declare class ChatManager {
     private isWaitingForResponse;
     private uiManager;
     private fileEditService;
+    private documentService;
     constructor(ollamaProvider: OllamaProvider, configManager: ConfigManager, logger: Logger);
     startSession(_options: any): Promise<void>;
     private createNewSession;
@@ -37,6 +38,13 @@ export declare class ChatManager {
     private handleFileRead;
     private handleFileWrite;
     private handleFileDelete;
+    private handleDocumentCommand;
+    private handleDocumentRead;
+    private handleDocumentWrite;
+    private handleDocumentSearch;
+    private handleDocumentConvert;
+    private enhanceMessageWithDocumentContext;
+    private extractFilePaths;
     cleanup(): Promise<void>;
 }
 //# sourceMappingURL=ChatManager.d.ts.map

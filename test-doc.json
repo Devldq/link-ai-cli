@@ -1,0 +1,14 @@
+{
+  "name": "测试JSON文档",
+  "version": "1.0.0",
+  "description": "这是一个测试的JSON文档",
+  "features": [
+    "JSON解析",
+    "数据验证",
+    "格式转换"
+  ],
+  "config": {
+    "debug": true,
+    "timeout": 5000
+  }
+}

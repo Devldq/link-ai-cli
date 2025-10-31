@@ -39,8 +39,8 @@ class UIManager {
         console.log(chalk_1.default.cyan('Tips to getting started:'));
         console.log(chalk_1.default.gray('1. Input a message to chat with AI'));
         console.log(chalk_1.default.gray('2. /help for more commands'));
-        console.log(chalk_1.default.gray('3. /read <file> to read files'));
-        console.log(chalk_1.default.gray('4. /write <file> <content> to write files'));
+        console.log(chalk_1.default.gray('3. /doc read <file> to read documents'));
+        console.log(chalk_1.default.gray('4. /search <file> <query> to search in documents'));
         console.log(chalk_1.default.gray('5. Ctrl+C to exit'));
         console.log();
     }
@@ -107,6 +107,11 @@ class UIManager {
         console.log(chalk_1.default.gray('  /write <file> <content>   - Write content to file'));
         console.log(chalk_1.default.gray('  /edit <file> [line] [content] - Edit file or show info'));
         console.log(chalk_1.default.gray('  /delete <file>            - Delete file (with backup)'));
+        console.log(chalk_1.default.cyan('\n📄 Document Operations:'));
+        console.log(chalk_1.default.gray('  /doc read <file>          - Read structured document'));
+        console.log(chalk_1.default.gray('  /doc write <file> <content> - Write structured document'));
+        console.log(chalk_1.default.gray('  /search <file> <query>    - Search in document'));
+        console.log(chalk_1.default.gray('  /convert <src> <dst> <fmt> - Convert document format'));
         console.log(chalk_1.default.cyan('\n💡 Tips:'));
         console.log(chalk_1.default.gray('  - Ask me to generate code, review code, or execute tasks'));
         console.log(chalk_1.default.gray('  - I can work with multiple programming languages'));
