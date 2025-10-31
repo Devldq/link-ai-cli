@@ -1,0 +1,42 @@
+import { OllamaProvider } from '../providers/OllamaProvider';
+import { ConfigManager } from './ConfigManager';
+import { Logger } from '../utils/Logger';
+export declare class ChatManager {
+    private ollamaProvider;
+    private configManager;
+    private logger;
+    private currentSession;
+    private rl;
+    private sessionsDir;
+    private isWaitingForResponse;
+    private uiManager;
+    private fileEditService;
+    constructor(ollamaProvider: OllamaProvider, configManager: ConfigManager, logger: Logger);
+    startSession(_options: any): Promise<void>;
+    private createNewSession;
+    private setupReadlineInterface;
+    private startChatLoop;
+    private handleUserInput;
+    private handleCommand;
+    private showHelp;
+    private showModels;
+    private showConfig;
+    private clearSession;
+    private showSessionHistory;
+    private handleExit;
+    private getSystemPrompt;
+    private updateSessionMetadata;
+    private saveCurrentSession;
+    private ensureSessionsDirectory;
+    listSessions(): Promise<void>;
+    showSession(sessionId: string): Promise<void>;
+    deleteSession(sessionId: string): Promise<void>;
+    clearAllSessions(): Promise<void>;
+    exportSession(sessionId: string): Promise<void>;
+    private handleFileEdit;
+    private handleFileRead;
+    private handleFileWrite;
+    private handleFileDelete;
+    cleanup(): Promise<void>;
+}
+//# sourceMappingURL=ChatManager.d.ts.map
