@@ -9,7 +9,7 @@ console.log(chalk.green('🎉 Thank you for installing LinChat!'));
 console.log(chalk.blue('\n📋 Installation completed successfully!'));
 
 console.log(chalk.cyan('\n🚀 Quick Start:'));
-console.log(chalk.gray('  Run "l" or "linchat" in your terminal to start the AI chat assistant'));
+console.log(chalk.gray('  Run "l", "link", or "linchat" in your terminal to start the AI chat assistant'));
 
 console.log(chalk.cyan('\n📚 Features:'));
 console.log(chalk.gray('  • Interactive AI chat with Ollama integration'));
@@ -24,7 +24,7 @@ console.log(chalk.gray('  • Download from: https://ollama.ai/'));
 console.log(chalk.gray('  • Pull a model: ollama pull llama2'));
 
 console.log(chalk.cyan('\n🔧 Commands:'));
-console.log(chalk.gray('  l / linchat    - Start interactive chat (default)'));
+console.log(chalk.gray('  l / link / linchat - Start interactive chat (default)'));
 console.log(chalk.gray('  l config       - Manage configuration'));
 console.log(chalk.gray('  l models       - Manage Ollama models'));
 console.log(chalk.gray('  l history      - Manage chat history'));
@@ -34,7 +34,7 @@ console.log(chalk.cyan('\n🔧 Troubleshooting:'));
 console.log(chalk.gray('  If "l" command not found:'));
 console.log(chalk.gray('  1. Check: npm list -g linchat'));
 console.log(chalk.gray('  2. Check PATH: echo $PATH'));
-console.log(chalk.gray('  3. Use full name: linchat'));
+console.log(chalk.gray('  3. Use other names: link or linchat'));
 console.log(chalk.gray('  4. Restart terminal'));
 
 console.log(chalk.cyan('\n💡 Examples:'));
@@ -44,4 +44,4 @@ console.log(chalk.gray('  修改 filename.js             # Modify file'));
 console.log(chalk.gray('  创建一个React组件             # Create component'));
 
 console.log(chalk.yellow('\n⚠️  Note: Make sure Ollama is running before using the chat features.'));
-console.log(chalk.green('\n🎯 Ready to go! Type "l" or "linchat" to start your AI assistant.'));
+console.log(chalk.green('\n🎯 Ready to go! Type "l", "link", or "linchat" to start your AI assistant.'));
