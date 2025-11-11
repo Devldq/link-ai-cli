@@ -19,7 +19,7 @@ class ConfigManager {
         // 默认配置
         this.defaultConfig = {
             ollama: {
-                endpoint: 'http://172.22.126.78:11434',
+                endpoint: 'http://172.22.126.125:11434',
                 model: 'gpt-oss:20b',
                 timeout: 30000,
                 maxTokens: 2048,

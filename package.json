@@ -1,6 +1,6 @@
 {
   "name": "linchat",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "An intelligent AI-powered command-line chat assistant with document processing, code review, and file management capabilities",
   "main": "dist/index.js",
   "bin": {
