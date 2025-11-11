@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2024-01-15
+
+### Added
+- Chinese documentation as default language
+- English documentation with language switching
+- Additional `link` command for better accessibility
+- Enhanced installation troubleshooting guide
+- Multi-language support in post-install instructions
+- Comprehensive command options documentation
+
+### Changed
+- README.md now defaults to Chinese
+- Enhanced user experience with multiple command options
+- Improved installation guidance and error handling
+- Updated all documentation with new command options
+
+### Fixed
+- Command registration issues on different systems
+- PATH-related installation problems
+- Missing command alternatives for better compatibility
+
+## [1.1.1] - 2024-01-15
+
+### Added
+- Fixed binary command registration
+- Enhanced documentation
+
+## [1.1.0] - 2024-01-15
+
+### Added
+- Intelligent intent analysis with option selection
+- Enhanced code review workflow
+- User confirmation for file modifications
+
 ## [1.0.0] - 2024-01-15
 
 ### Added
