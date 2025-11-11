@@ -926,14 +926,14 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
       
       // 检测是否需要保存到文件
       const saveKeywords = [
-        '保存', '写入', '创建', '生成', '输出', '修改', '更新', '改写',
-        'save', 'write', 'create', 'generate', 'output', 'modify', 'update', 'rewrite',
-        '文件', '文档', 'file', 'document'
+        '保存', '写入', '创建', '生成', '输出', '修改', '更新', '改写', '实现', '开发',
+        'save', 'write', 'create', 'generate', 'output', 'modify', 'update', 'rewrite', 'implement', 'develop',
+        '文件', '文档', '代码', '脚本', 'file', 'document', 'code', 'script'
       ];
 
       const needsSaving = saveKeywords.some(keyword => 
         userInput.toLowerCase().includes(keyword.toLowerCase())
-      ) || isCodeReviewOrModification;
+      ) || isCodeReviewOrModification || this.containsCodeBlocks(aiResponse) || this.isCodeGenerationRequest(userInput);
 
       if (!needsSaving) {
         return;
@@ -948,55 +948,295 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
         return;
       }
       
-      // 如果没有明确的文件路径，尝试从AI响应中提取代码块或内容
-      if (filePaths.length === 0) {
-        await this.saveAIResponseContent(userInput, aiResponse);
-        return;
-      }
-
-      // 如果有明确的文件路径，保存到指定文件
-      for (const filePath of filePaths) {
-        await this.saveToSpecificFile(filePath, aiResponse);
-      }
+      // 智能检测项目文件结构并自动保存
+      await this.intelligentSaving(userInput, aiResponse, filePaths);
 
     } catch (error) {
       this.logger.error('处理AI响应保存时出错:', error);
     }
   }
 
-  // 保存AI响应内容到文件
-  private async saveAIResponseContent(userInput: string, aiResponse: string): Promise<void> {
+  
+
+  // 自动保存到项目
+  private async autoSaveToProject(userInput: string, aiResponse: string): Promise<void> {
     try {
       // 提取代码块
       const codeBlocks = this.extractCodeBlocks(aiResponse);
       
-      if (codeBlocks.length > 0) {
-        for (let i = 0; i < codeBlocks.length; i++) {
-          const block = codeBlocks[i];
-          if (block) {
-            const fileName = this.generateFileName(block.language, userInput, i);
-            
-            const result = await this.fileEditService.writeFile(fileName, block.content);
+      if (codeBlocks.length === 0) {
+        // 如果没有代码块，检查是否是配置文件或文档
+        await this.saveNonCodeContent(userInput, aiResponse);
+        return;
+      }
+
+      // 检测项目结构
+      const projectStructure = await this.detectProjectStructure();
+      
+      // 为每个代码块智能选择保存位置
+      for (let i = 0; i < codeBlocks.length; i++) {
+        const block = codeBlocks[i];
+        if (block) {
+          const targetPath = await this.determineTargetPath(block, userInput, projectStructure, i);
+          
+          // 确保目录存在
+          await this.ensureDirectoryExists(targetPath);
+          
+          const result = await this.fileEditService.writeFile(targetPath, block.content);
+          
           if (result.success) {
-            console.log(chalk.green(`\n✅ 代码已保存到: ${fileName}`));
+            console.log(chalk.green(`\n✅ 代码已保存到: ${targetPath}`));
             if (result.backupPath) {
-              console.log(chalk.gray(`备份文件: ${result.backupPath}`));
+              console.log(chalk.gray(`📁 备份文件: ${result.backupPath}`));
             }
           } else {
-              console.log(chalk.red(`❌ 保存失败: ${result.error}`));
-            }
+            console.log(chalk.red(`❌ 保存失败: ${result.error}`));
           }
-        }
-      } else {
-        // 如果没有代码块，保存整个响应
-        const fileName = this.generateFileName('txt', userInput, 0);
-        const result = await this.fileEditService.writeFile(fileName, aiResponse);
-        if (result.success) {
-          console.log(chalk.green(`\n✅ 响应已保存到: ${fileName}`));
         }
       }
     } catch (error) {
-      this.logger.error('保存AI响应内容时出错:', error);
+      this.logger.error('自动保存到项目时出错:', error);
+    }
+  }
+
+  // 检测项目结构
+  private async detectProjectStructure(): Promise<any> {
+    try {
+      const fs = require('fs').promises;
+      const path = require('path');
+      const cwd = process.cwd();
+      
+      const structure = {
+        hasPackageJson: false,
+        hasSrcDir: false,
+        hasLibDir: false,
+        hasTestDir: false,
+        hasDocsDir: false,
+        hasConfigFiles: false,
+        projectType: 'unknown'
+      };
+
+      // 检查常见文件和目录
+      const files = await fs.readdir(cwd);
+      
+      structure.hasPackageJson = files.includes('package.json');
+      structure.hasSrcDir = files.includes('src');
+      structure.hasLibDir = files.includes('lib');
+      structure.hasTestDir = files.includes('test') || files.includes('tests') || files.includes('__tests__');
+      structure.hasDocsDir = files.includes('docs') || files.includes('documentation');
+      structure.hasConfigFiles = files.some((file: string) => 
+        file.includes('config') || file.includes('.config') || file.endsWith('.json')
+      );
+
+      // 判断项目类型
+      if (structure.hasPackageJson) {
+        const packageJson = JSON.parse(await fs.readFile(path.join(cwd, 'package.json'), 'utf8'));
+        if (packageJson.dependencies?.react || packageJson.devDependencies?.react) {
+          structure.projectType = 'react';
+        } else if (packageJson.dependencies?.vue || packageJson.devDependencies?.vue) {
+          structure.projectType = 'vue';
+        } else if (packageJson.dependencies?.express || packageJson.devDependencies?.express) {
+          structure.projectType = 'node';
+        } else {
+          structure.projectType = 'javascript';
+        }
+      }
+
+      return structure;
+    } catch (error) {
+      this.logger.warn('检测项目结构时出错:', error);
+      return { projectType: 'unknown' };
+    }
+  }
+
+  // 确定目标路径
+  private async determineTargetPath(block: any, userInput: string, projectStructure: any, index: number): Promise<string> {
+    const path = require('path');
+    const language = block.language || 'txt';
+    const baseName = this.extractFileNameFromInput(userInput) || this.generateBaseName(userInput, index);
+    
+    // 根据文件类型和项目结构确定目录
+    let targetDir = process.cwd();
+    
+    if (projectStructure.hasSrcDir) {
+      switch (language) {
+        case 'javascript':
+        case 'js':
+        case 'typescript':
+        case 'ts':
+        case 'jsx':
+        case 'tsx':
+          targetDir = path.join(process.cwd(), 'src');
+          break;
+        case 'css':
+        case 'scss':
+        case 'less':
+          targetDir = path.join(process.cwd(), 'src', 'styles');
+          break;
+        case 'html':
+          targetDir = path.join(process.cwd(), 'src', 'templates');
+          break;
+      }
+    }
+
+    // 特殊文件类型处理
+    if (language === 'json' && (baseName.includes('package') || baseName.includes('config'))) {
+      targetDir = process.cwd();
+    }
+    
+    if (language === 'md' || language === 'markdown') {
+      if (projectStructure.hasDocsDir) {
+        targetDir = path.join(process.cwd(), 'docs');
+      }
+    }
+
+    // 测试文件
+    if (baseName.includes('test') || baseName.includes('spec')) {
+      if (projectStructure.hasTestDir) {
+        targetDir = path.join(process.cwd(), 'test');
+      }
+    }
+
+    const extension = this.getFileExtension(language);
+    const fileName = baseName.endsWith(extension) ? baseName : `${baseName}${extension}`;
+    
+    return path.join(targetDir, fileName);
+  }
+
+  // 确保目录存在
+  private async ensureDirectoryExists(filePath: string): Promise<void> {
+    try {
+      const fs = require('fs').promises;
+      const path = require('path');
+      const dir = path.dirname(filePath);
+      
+      await fs.mkdir(dir, { recursive: true });
+    } catch (error) {
+      this.logger.warn('创建目录时出错:', error);
+    }
+  }
+
+  // 从用户输入中提取文件名
+  private extractFileNameFromInput(userInput: string): string | null {
+    // 匹配常见的文件名模式
+    const patterns = [
+      /(?:创建|生成|写|保存).*?([a-zA-Z0-9_-]+\.[a-zA-Z0-9]+)/,
+      /(?:create|generate|write|save).*?([a-zA-Z0-9_-]+\.[a-zA-Z0-9]+)/i,
+      /([a-zA-Z0-9_-]+\.[a-zA-Z0-9]+)/
+    ];
+
+    for (const pattern of patterns) {
+      const match = userInput.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+
+    return null;
+  }
+
+  // 生成基础文件名
+  private generateBaseName(userInput: string, index: number): string {
+    // 从用户输入中提取可能的文件名
+    const fileNameMatch = userInput.match(/(?:创建|生成|写入|保存).*?([a-zA-Z0-9_-]+)(?:\.(\\w+))?/);
+    let baseName: string = (fileNameMatch && fileNameMatch[1]) ? fileNameMatch[1] : 'ai-generated';
+    
+    // 根据内容类型调整文件名
+    if (userInput.includes('组件') || userInput.includes('component')) {
+      baseName = baseName.includes('component') ? baseName : `${baseName}-component`;
+    } else if (userInput.includes('服务') || userInput.includes('service')) {
+      baseName = baseName.includes('service') ? baseName : `${baseName}-service`;
+    } else if (userInput.includes('工具') || userInput.includes('util')) {
+      baseName = baseName.includes('util') ? baseName : `${baseName}-util`;
+    } else if (userInput.includes('配置') || userInput.includes('config')) {
+      baseName = baseName.includes('config') ? baseName : `${baseName}-config`;
+    }
+
+    // 如果有多个代码块，添加索引
+    if (index > 0) {
+      baseName += `-${index + 1}`;
+    }
+
+    return baseName;
+  }
+
+  // 保存非代码内容
+  private async saveNonCodeContent(userInput: string, aiResponse: string): Promise<void> {
+    try {
+      const path = require('path');
+      // 检测内容类型
+      let fileName = 'ai-response.txt';
+      let targetDir = process.cwd();
+
+      if (aiResponse.includes('# ') || aiResponse.includes('## ')) {
+        // Markdown 内容
+        fileName = this.extractFileNameFromInput(userInput) || 'ai-response.md';
+        const docsDir = path.join(process.cwd(), 'docs');
+        if (await this.directoryExists(docsDir)) {
+          targetDir = docsDir;
+        }
+      } else if (aiResponse.includes('{') && aiResponse.includes('}')) {
+        // JSON 内容
+        fileName = this.extractFileNameFromInput(userInput) || 'ai-response.json';
+      }
+
+      const targetPath = path.join(targetDir, fileName);
+      const result = await this.fileEditService.writeFile(targetPath, aiResponse);
+      
+      if (result.success) {
+        console.log(chalk.green(`\n✅ 内容已保存到: ${targetPath}`));
+      } else {
+        console.log(chalk.red(`❌ 保存失败: ${result.error}`));
+      }
+    } catch (error) {
+      this.logger.error('保存非代码内容时出错:', error);
+    }
+  }
+
+  // 检查目录是否存在
+  private async directoryExists(dirPath: string): Promise<boolean> {
+    try {
+      const fs = require('fs').promises;
+      const stat = await fs.stat(dirPath);
+      return stat.isDirectory();
+    } catch {
+      return false;
+    }
+  }
+
+  // 检查是否包含代码块
+  private containsCodeBlocks(text: string): boolean {
+    return /```[\s\S]*?```/.test(text);
+  }
+
+  // 检查是否是代码生成请求
+  private isCodeGenerationRequest(userInput: string): boolean {
+    const codeKeywords = [
+      '写代码', '编程', '实现', '开发', '创建函数', '创建类', '创建组件',
+      'write code', 'programming', 'implement', 'develop', 'create function', 'create class', 'create component'
+    ];
+    
+    return codeKeywords.some(keyword => 
+      userInput.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }
+
+  // 智能保存功能
+  private async intelligentSaving(userInput: string, aiResponse: string, filePaths: string[]): Promise<void> {
+    try {
+      // 如果有明确的文件路径，保存到指定文件
+      if (filePaths.length > 0) {
+        for (const filePath of filePaths) {
+          await this.saveToSpecificFile(filePath, aiResponse);
+        }
+        return;
+      }
+
+      // 智能检测项目结构并自动保存
+      await this.autoSaveToProject(userInput, aiResponse);
+
+    } catch (error) {
+      this.logger.error('智能保存时出错:', error);
     }
   }
 
@@ -1055,37 +1295,53 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     return codeBlocks;
   }
 
-  // 生成文件名
-  private generateFileName(language: string, userInput: string, index: number): string {
-    const timestamp = new Date().toISOString().slice(0, 19).replace(/[:.]/g, '-');
-    
-    // 从用户输入中提取可能的文件名
-    const fileNameMatch = userInput.match(/(?:创建|生成|写入|保存).*?([a-zA-Z0-9_-]+)(?:\.(\w+))?/);
-    let baseName = fileNameMatch ? fileNameMatch[1] : 'ai-generated';
-    
-    // 根据语言确定扩展名
-    const extensions: Record<string, string> = {
-      'javascript': 'js',
-      'typescript': 'ts',
-      'python': 'py',
-      'java': 'java',
-      'cpp': 'cpp',
-      'c': 'c',
-      'html': 'html',
-      'css': 'css',
-      'json': 'json',
-      'yaml': 'yaml',
-      'yml': 'yml',
-      'markdown': 'md',
-      'md': 'md',
-      'txt': 'txt',
-      'text': 'txt'
-    };
+  
 
-    const extension = extensions[language.toLowerCase()] || 'txt';
-    const suffix = index > 0 ? `-${index}` : '';
+  // 获取文件扩展名
+  private getFileExtension(language: string): string {
+    const extensions: { [key: string]: string } = {
+      'javascript': '.js',
+      'js': '.js',
+      'typescript': '.ts',
+      'ts': '.ts',
+      'jsx': '.jsx',
+      'tsx': '.tsx',
+      'python': '.py',
+      'py': '.py',
+      'java': '.java',
+      'cpp': '.cpp',
+      'c++': '.cpp',
+      'c': '.c',
+      'go': '.go',
+      'rust': '.rs',
+      'php': '.php',
+      'ruby': '.rb',
+      'swift': '.swift',
+      'kotlin': '.kt',
+      'scala': '.scala',
+      'html': '.html',
+      'css': '.css',
+      'scss': '.scss',
+      'sass': '.sass',
+      'less': '.less',
+      'json': '.json',
+      'yaml': '.yaml',
+      'yml': '.yml',
+      'xml': '.xml',
+      'markdown': '.md',
+      'md': '.md',
+      'txt': '.txt',
+      'sh': '.sh',
+      'bash': '.sh',
+      'zsh': '.zsh',
+      'fish': '.fish',
+      'powershell': '.ps1',
+      'sql': '.sql',
+      'dockerfile': 'Dockerfile',
+      'makefile': 'Makefile'
+    };
     
-    return `${baseName}${suffix}-${timestamp}.${extension}`;
+    return extensions[language.toLowerCase()] || '.txt';
   }
 
   // 检查语言是否匹配文件扩展名

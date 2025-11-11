@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2024-01-15
+
+### Added
+- 智能项目文件保存功能
+- AI生成代码自动保存到项目合适位置
+- 项目结构智能检测
+- 基于文件类型的目录自动选择
+- 增强的文件名生成策略
+- 支持多种编程语言和文件格式
+
+### Enhanced
+- 改进AI响应处理逻辑
+- 优化代码块提取和保存
+- 增强文件路径智能识别
+- 改进项目类型检测（React、Vue、Node.js等）
+- 自动创建必要的目录结构
+
+### Fixed
+- 修复TypeScript类型错误
+- 优化文件扩展名处理
+- 改进错误处理机制
+
 ## [1.2.1] - 2024-01-15
 
 ### Fixed
