@@ -1052,7 +1052,11 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
   // 确定目标路径
   private async determineTargetPath(block: any, userInput: string, projectStructure: any, index: number): Promise<string> {
     const path = require('path');
-    const language = block.language || 'txt';
+    
+    // 智能检测文件类型
+    const detectedLanguage = this.detectLanguageFromContent(block.content, userInput);
+    const language = block.language || detectedLanguage;
+    
     const baseName = this.extractFileNameFromInput(userInput) || this.generateBaseName(userInput, index);
     
     // 根据文件类型和项目结构确定目录
@@ -1067,6 +1071,16 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
         case 'jsx':
         case 'tsx':
           targetDir = path.join(process.cwd(), 'src');
+          // 进一步细分目录
+          if (userInput.includes('组件') || userInput.includes('component') || 
+              block.content.includes('export default') || block.content.includes('function Component')) {
+            targetDir = path.join(targetDir, 'components');
+          } else if (userInput.includes('服务') || userInput.includes('service') || 
+                     (block.content.includes('class') && block.content.includes('Service'))) {
+            targetDir = path.join(targetDir, 'services');
+          } else if (userInput.includes('工具') || userInput.includes('util') || userInput.includes('helper')) {
+            targetDir = path.join(targetDir, 'utils');
+          }
           break;
         case 'css':
         case 'scss':
@@ -1160,31 +1174,110 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     return baseName;
   }
 
+  // 智能检测内容语言类型
+  private detectLanguageFromContent(content: string, userInput: string): string {
+    // 检测代码特征
+    const codePatterns = [
+      { pattern: /import\s+.*from\s+['"]/, language: 'javascript' },
+      { pattern: /export\s+(default\s+)?/, language: 'javascript' },
+      { pattern: /function\s+\w+\s*\(/, language: 'javascript' },
+      { pattern: /const\s+\w+\s*=/, language: 'javascript' },
+      { pattern: /let\s+\w+\s*=/, language: 'javascript' },
+      { pattern: /var\s+\w+\s*=/, language: 'javascript' },
+      { pattern: /interface\s+\w+/, language: 'typescript' },
+      { pattern: /type\s+\w+\s*=/, language: 'typescript' },
+      { pattern: /class\s+\w+/, language: 'typescript' },
+      { pattern: /<\w+.*>/, language: 'jsx' },
+      { pattern: /React\./, language: 'jsx' },
+      { pattern: /useState|useEffect|useContext/, language: 'jsx' },
+      { pattern: /def\s+\w+\s*\(/, language: 'python' },
+      { pattern: /import\s+\w+/, language: 'python' },
+      { pattern: /from\s+\w+\s+import/, language: 'python' },
+      { pattern: /public\s+class\s+\w+/, language: 'java' },
+      { pattern: /package\s+\w+/, language: 'java' },
+      { pattern: /#include\s*</, language: 'cpp' },
+      { pattern: /int\s+main\s*\(/, language: 'cpp' },
+      { pattern: /\.[\w-]+\s*\{/, language: 'css' },
+      { pattern: /@media\s*\(/, language: 'css' },
+      { pattern: /\$[\w-]+\s*:/, language: 'scss' },
+      { pattern: /<html|<head|<body|<div/, language: 'html' },
+      { pattern: /<!DOCTYPE\s+html/, language: 'html' },
+      { pattern: /^\s*\{[\s\S]*\}\s*$/, language: 'json' },
+      { pattern: /^\s*[\w-]+\s*:/, language: 'yaml' },
+      { pattern: /^#\s+/, language: 'markdown' },
+      { pattern: /\[.*\]\(.*\)/, language: 'markdown' },
+      { pattern: /```/, language: 'markdown' },
+      { pattern: /^#!/, language: 'bash' },
+      { pattern: /echo\s+/, language: 'bash' }
+    ];
+
+    // 检查内容特征
+    for (const { pattern, language } of codePatterns) {
+      if (pattern.test(content)) {
+        return language;
+      }
+    }
+
+    // 检查用户输入中的语言提示
+    const languageHints = [
+      { keywords: ['react', 'jsx', '组件'], language: 'jsx' },
+      { keywords: ['typescript', 'ts', 'interface', 'type'], language: 'typescript' },
+      { keywords: ['javascript', 'js'], language: 'javascript' },
+      { keywords: ['python', 'py'], language: 'python' },
+      { keywords: ['java'], language: 'java' },
+      { keywords: ['css', '样式'], language: 'css' },
+      { keywords: ['scss', 'sass'], language: 'scss' },
+      { keywords: ['html', '网页'], language: 'html' },
+      { keywords: ['json', '配置'], language: 'json' },
+      { keywords: ['yaml', 'yml'], language: 'yaml' },
+      { keywords: ['markdown', 'md', '文档'], language: 'markdown' },
+      { keywords: ['bash', 'shell', '脚本'], language: 'bash' }
+    ];
+
+    const lowerInput = userInput.toLowerCase();
+    for (const { keywords, language } of languageHints) {
+      if (keywords.some(keyword => lowerInput.includes(keyword))) {
+        return language;
+      }
+    }
+
+    // 默认返回文本
+    return 'txt';
+  }
+
   // 保存非代码内容
   private async saveNonCodeContent(userInput: string, aiResponse: string): Promise<void> {
     try {
       const path = require('path');
-      // 检测内容类型
-      let fileName = 'ai-response.txt';
+      
+      // 智能检测内容类型
+      const detectedLanguage = this.detectLanguageFromContent(aiResponse, userInput);
+      let fileName = this.extractFileNameFromInput(userInput) || `ai-response${this.getFileExtension(detectedLanguage)}`;
       let targetDir = process.cwd();
 
-      if (aiResponse.includes('# ') || aiResponse.includes('## ')) {
-        // Markdown 内容
-        fileName = this.extractFileNameFromInput(userInput) || 'ai-response.md';
+      // 根据检测到的语言类型选择目录
+      if (detectedLanguage === 'markdown' || detectedLanguage === 'md') {
         const docsDir = path.join(process.cwd(), 'docs');
         if (await this.directoryExists(docsDir)) {
           targetDir = docsDir;
         }
-      } else if (aiResponse.includes('{') && aiResponse.includes('}')) {
-        // JSON 内容
-        fileName = this.extractFileNameFromInput(userInput) || 'ai-response.json';
+      } else if (detectedLanguage === 'json' && 
+                 (fileName.includes('package') || fileName.includes('config'))) {
+        targetDir = process.cwd();
       }
 
       const targetPath = path.join(targetDir, fileName);
+      
+      // 确保目录存在
+      await this.ensureDirectoryExists(targetPath);
+      
       const result = await this.fileEditService.writeFile(targetPath, aiResponse);
       
       if (result.success) {
         console.log(chalk.green(`\n✅ 内容已保存到: ${targetPath}`));
+        if (result.backupPath) {
+          console.log(chalk.gray(`📁 备份文件: ${result.backupPath}`));
+        }
       } else {
         console.log(chalk.red(`❌ 保存失败: ${result.error}`));
       }
@@ -1281,10 +1374,15 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
     let match;
 
     while ((match = codeBlockRegex.exec(content)) !== null) {
-      const language = match[1] || 'text';
+      let language = match[1] || '';
       const blockContent = match[2]?.trim();
       
       if (blockContent) {
+        // 如果没有指定语言，尝试从内容中检测
+        if (!language) {
+          language = this.detectLanguageFromContent(blockContent, '');
+        }
+        
         codeBlocks.push({
           language,
           content: blockContent
@@ -1292,7 +1390,37 @@ Be helpful, concise, and provide practical solutions. When generating code, incl
       }
     }
 
+    // 如果没有找到代码块，但内容看起来像代码，创建一个代码块
+    if (codeBlocks.length === 0 && this.looksLikeCode(content)) {
+      const detectedLanguage = this.detectLanguageFromContent(content, '');
+      codeBlocks.push({ language: detectedLanguage, content: content.trim() });
+    }
+
     return codeBlocks;
+  }
+
+  // 检查文本是否看起来像代码
+  private looksLikeCode(text: string): boolean {
+    const codeIndicators = [
+      /function\s+\w+\s*\(/,
+      /const\s+\w+\s*=/,
+      /let\s+\w+\s*=/,
+      /var\s+\w+\s*=/,
+      /import\s+.*from/,
+      /export\s+(default\s+)?/,
+      /class\s+\w+/,
+      /interface\s+\w+/,
+      /type\s+\w+\s*=/,
+      /def\s+\w+\s*\(/,
+      /public\s+class/,
+      /#include\s*</,
+      /\.[\w-]+\s*\{/,
+      /<\w+.*>/,
+      /\{[\s\S]*\}/,
+      /^\s*[\w-]+\s*:/m
+    ];
+
+    return codeIndicators.some(pattern => pattern.test(text));
   }
 
   

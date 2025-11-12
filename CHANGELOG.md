@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2024-01-15
+
+### Enhanced
+- 智能内容类型检测功能
+- 根据文件内容自动识别编程语言
+- 改进代码块提取逻辑，支持无语言标记的代码
+- 增强文件类型检测算法
+- 优化目录结构智能分类
+
+### Added
+- 新增40+种编程语言和文件格式检测模式
+- 支持React、TypeScript、Python、Java等主流语言
+- 智能检测HTML、CSS、JSON、YAML等格式
+- 自动识别组件、服务、工具类等代码类型
+- 增强的文件保存路径智能选择
+
+### Fixed
+- 修复正则表达式语法错误
+- 解决文件总是保存为txt格式的问题
+- 优化代码内容检测准确性
+- 改进文件扩展名匹配逻辑
+
 ## [1.3.0] - 2024-01-15
 
 ### Added

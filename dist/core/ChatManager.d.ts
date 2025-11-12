@@ -52,6 +52,7 @@ export declare class ChatManager {
     private ensureDirectoryExists;
     private extractFileNameFromInput;
     private generateBaseName;
+    private detectLanguageFromContent;
     private saveNonCodeContent;
     private directoryExists;
     private containsCodeBlocks;
@@ -59,6 +60,7 @@ export declare class ChatManager {
     private intelligentSaving;
     private saveToSpecificFile;
     private extractCodeBlocks;
+    private looksLikeCode;
     private getFileExtension;
     private isLanguageMatch;
     private isCodeReviewOrModificationRequest;
